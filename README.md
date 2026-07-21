@@ -65,3 +65,15 @@ Se você não quiser usar **GitHub Actions** como fonte do Pages, selecione:
 - **Folder:** `/docs`
 
 A pasta `docs/` contém uma cópia estática pronta do app. Neste modo, a URL continua `https://loopstop.github.io/RemedCalc/` e o GitHub não vai mais publicar apenas o README.
+
+
+## Como confirmar que a versão nova publicou
+
+Abra `https://loopstop.github.io/RemedCalc/?v=historico-local` em aba anônima. A versão correta mostra:
+
+- Lista **Receitas** à esquerda.
+- Botões **Adicionar medicamento** e **Nova receita** no centro.
+- Painel **Histórico** à direita.
+- Rodapé central com `Versão: histórico local · RemedCalc v2`.
+
+Se a página ainda carregar arquivos antigos como `assets/index-BDuydvXl.js`, o GitHub Pages ainda não publicou o commit novo. Nesse caso, confirme se a branch configurada em **Settings → Pages** é a mesma branch onde o commit foi enviado e aguarde a invalidação de cache do Pages.

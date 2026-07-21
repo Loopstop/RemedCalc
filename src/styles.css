@@ -47,6 +47,7 @@ button { cursor: pointer; }
 .warning { padding: 14px 16px; border-radius: 16px; color: #854d0e; background: #fef3c7; border: 1px solid #facc15; font-weight: 800; }
 .formula { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; padding: 18px; color: #334155; }
 .formula p { margin: 0; }
+.buildBadge { margin: 12px 0 0; text-align: center; color: #64748b; font-size: .85rem; font-weight: 800; }
 .currentBox { margin-bottom: 16px; padding: 12px; border-radius: 16px; background: #f0fdfa; border: 1px solid #99f6e4; }
 .currentBox p { margin: 8px 0 0; line-height: 1.35; }
 .recipeDetail h2 { margin: 0 0 4px; color: #172033; }

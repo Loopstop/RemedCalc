@@ -244,6 +244,8 @@ function App() {
           <PackageCheck size={20} />
           <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
         </section>
+
+        <p className="buildBadge">Versão: histórico local · RemedCalc v2</p>
       </section>
 
       <aside className="historyPanel detailPanel">
