@@ -1,3 +1,25 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Calculator, ClipboardList, Droplets, PackageCheck, Pill, Plus, Save } from 'lucide-react';
+import './styles.css';
+
+const STORAGE_KEY = 'remedcalc.receitas.v1';
+
+const initialForm = {
+  mode: 'comprimidos',
+  dose: '1',
+  intervalHours: '8',
+  treatmentDays: '30',
+  deliveryDays: '30',
+  reservePercent: '0',
+  unitsPerBlister: '10',
+  blistersPerBox: '3',
+  mlPerBottle: '100',
+};
+
+const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
+const positiveNumber = (value) => Math.max(Number(value) || 0, 0);
+const nextName = (prefix, length) => `${prefix} ${length + 1}`;
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Calculator, Pill, Droplets, PackageCheck } from 'lucide-react';
@@ -35,6 +57,27 @@ function ResultCard({ title, value, detail }) {
   );
 }
 
+function summarizeMedicine(medicine) {
+  const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
+  const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
+  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+}
+
+function App() {
+  const [form, setForm] = useState(initialForm);
+  const [currentMedicines, setCurrentMedicines] = useState([]);
+  const [recipes, setRecipes] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+  }, [recipes]);
 function App() {
   const [form, setForm] = useState({
     mode: 'comprimidos',
@@ -100,6 +143,164 @@ function App() {
   }, [form]);
 
   const isMl = form.mode === 'ml';
+  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes.at(-1) || null;
+
+  const buildMedicine = () => ({
+    id: crypto.randomUUID(),
+    name: nextName('Remédio', currentMedicines.length),
+    mode: form.mode,
+    dose: positiveNumber(form.dose),
+    intervalHours: positiveNumber(form.intervalHours),
+    treatmentDays: positiveNumber(form.treatmentDays),
+    deliveryDays: result.deliveryDays,
+    reservePercent: positiveNumber(form.reservePercent),
+    total: result.total,
+    totalWithReserve: result.totalWithReserve,
+    packageALabel: result.packageALabel,
+    packageA: result.packageA,
+    packageBLabel: result.packageBLabel,
+    packageB: result.packageB,
+  });
+
+  const addMedicine = () => {
+    setCurrentMedicines((items) => [...items, buildMedicine()]);
+  };
+
+  const startNewRecipe = () => {
+    const medicines = currentMedicines.length ? currentMedicines : [buildMedicine()];
+
+    const recipe = {
+      id: crypto.randomUUID(),
+      name: nextName('Receita', recipes.length),
+      createdAt: new Date().toLocaleString('pt-BR'),
+      medicines,
+    };
+
+    setRecipes((items) => [...items, recipe]);
+    setSelectedRecipeId(recipe.id);
+    setCurrentMedicines([]);
+    setForm(initialForm);
+  };
+
+  return (
+    <main className="page appShell">
+      <aside className="historyPanel">
+        <div className="panelTitle">
+          <ClipboardList size={20} />
+          <strong>Receitas</strong>
+        </div>
+        {recipes.length ? (
+          <div className="recipeList">
+            {recipes.map((recipe) => (
+              <button
+                key={recipe.id}
+                className={recipe.id === selectedRecipe?.id ? 'recipeButton active' : 'recipeButton'}
+                onClick={() => setSelectedRecipeId(recipe.id)}
+              >
+                <strong>{recipe.name}</strong>
+                <span>{recipe.medicines.length} remédio(s)</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="emptyText">Nenhuma receita arquivada.</p>
+        )}
+      </aside>
+
+      <section className="centerColumn">
+        <section className="hero">
+          <div>
+            <p className="eyebrow">Farmácia · dispensação</p>
+            <h1>RemedCalc</h1>
+            <p>Calcule rapidamente quantidade a entregar por período, dose, intervalo e apresentação do medicamento.</p>
+          </div>
+          <div className="heroIcon"><Calculator size={54} /></div>
+        </section>
+
+        <section className="panel">
+          <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
+            <button className={!isMl ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
+              <Pill size={18} /> Comprimidos
+            </button>
+            <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
+              <Droplets size={18} /> Líquidos / mL
+            </button>
+          </div>
+
+          <div className="grid">
+            <Field label={isMl ? 'Dose por tomada' : 'Comprimidos por tomada'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+            <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
+            <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
+            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Use para entrega parcial, mensal ou total." />
+            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Opcional: perdas, arredondamentos ou política interna." />
+
+            {isMl ? (
+              <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+            ) : (
+              <>
+                <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
+                <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+              </>
+            )}
+          </div>
+
+          <div className="actions">
+            <button className="secondaryAction" onClick={addMedicine}><Plus size={18} /> Adicionar medicamento</button>
+            <button className="primaryAction" onClick={startNewRecipe}><Save size={18} /> Nova receita</button>
+          </div>
+        </section>
+
+        <section className="results" aria-live="polite">
+          <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${roundUp(result.deliveryDays)} dia(s)`} />
+          <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
+          <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
+          {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
+        </section>
+
+        {result.warning && <p className="warning">Atenção: {result.warning}</p>}
+
+        <section className="formula">
+          <PackageCheck size={20} />
+          <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
+        </section>
+
+        <p className="buildBadge">Versão: histórico local · RemedCalc v2</p>
+      </section>
+
+      <aside className="historyPanel detailPanel">
+        <div className="panelTitle">
+          <ClipboardList size={20} />
+          <strong>Histórico</strong>
+        </div>
+
+        {currentMedicines.length > 0 && (
+          <section className="currentBox">
+            <strong>Receita atual</strong>
+            {currentMedicines.map((medicine) => (
+              <p key={medicine.id}>{medicine.name}: {summarizeMedicine(medicine)}</p>
+            ))}
+          </section>
+        )}
+
+        {selectedRecipe ? (
+          <section className="recipeDetail">
+            <h2>{selectedRecipe.name}</h2>
+            <span>{selectedRecipe.createdAt}</span>
+            {selectedRecipe.medicines.map((medicine) => (
+              <article key={medicine.id} className="medicineItem">
+                <h3>{medicine.name}</h3>
+                <p>{summarizeMedicine(medicine)}</p>
+                <small>
+                  Embalagem: {medicine.packageA} {medicine.packageALabel}
+                  {medicine.packageB ? ` · ${medicine.packageB} ${medicine.packageBLabel}` : ''}
+                </small>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <p className="emptyText">Selecione uma receita para ver o histórico.</p>
+        )}
+      </aside>
 
   return (
     <main className="page">

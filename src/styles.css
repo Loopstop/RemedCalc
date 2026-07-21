@@ -8,6 +8,12 @@
 
 body { margin: 0; min-width: 320px; }
 button, input { font: inherit; }
+button { cursor: pointer; }
+
+.page { width: min(1480px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0; }
+.appShell { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.centerColumn { min-width: 0; }
+.hero { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 18px; padding: 30px; border-radius: 28px; color: white; background: linear-gradient(135deg, #0f766e, #0b4f6c); box-shadow: 0 18px 50px rgba(11, 79, 108, .25); }
 
 .page { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0; }
 .hero { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 24px; padding: 32px; border-radius: 28px; color: white; background: linear-gradient(135deg, #0f766e, #0b4f6c); box-shadow: 0 18px 50px rgba(11, 79, 108, .25); }
@@ -15,6 +21,16 @@ button, input { font: inherit; }
 .hero p { max-width: 700px; margin: 0; color: #dff7f4; font-size: 1.05rem; }
 .eyebrow { text-transform: uppercase; letter-spacing: .16em; font-weight: 800; font-size: .78rem !important; color: #a7f3d0 !important; }
 .heroIcon { display: grid; place-items: center; min-width: 104px; height: 104px; border-radius: 26px; background: rgba(255,255,255,.14); }
+.panel, .formula, .historyPanel { background: white; border: 1px solid #dbe6ee; border-radius: 24px; box-shadow: 0 12px 38px rgba(23, 32, 51, .08); }
+.panel { padding: 22px; }
+.historyPanel { position: sticky; top: 18px; padding: 18px; min-height: 260px; }
+.panelTitle { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: #0f766e; }
+.recipeList { display: grid; gap: 10px; }
+.recipeButton { width: 100%; text-align: left; display: grid; gap: 4px; padding: 12px; border: 1px solid #dbe6ee; border-radius: 16px; color: #334155; background: #f8fafc; }
+.recipeButton.active { border-color: #0f766e; background: #ecfdf5; color: #0f766e; }
+.recipeButton span, .emptyText, .recipeDetail span, .medicineItem small, .currentBox p { color: #64748b; font-size: .9rem; }
+.tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.tabs button { display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 999px; background: #f8fafc; color: #334155; font-weight: 800; }
 .panel, .formula { background: white; border: 1px solid #dbe6ee; border-radius: 24px; box-shadow: 0 12px 38px rgba(23, 32, 51, .08); }
 .panel { padding: 22px; }
 .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
@@ -26,6 +42,10 @@ button, input { font: inherit; }
 .inputWrap { display: flex; align-items: center; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 14px; overflow: hidden; }
 .inputWrap input { width: 100%; border: 0; outline: 0; padding: 13px 12px; background: transparent; color: #0f172a; }
 .inputWrap strong { padding: 0 12px; color: #0f766e; white-space: nowrap; }
+.actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.primaryAction, .secondaryAction { display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 14px; font-weight: 900; }
+.primaryAction { border: 1px solid #0f766e; background: #0f766e; color: white; }
+.secondaryAction { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; }
 .results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
 .resultCard { min-height: 128px; padding: 20px; border-radius: 22px; background: #172033; color: white; box-shadow: 0 12px 28px rgba(23, 32, 51, .16); }
 .resultCard span { display: block; min-height: 38px; color: #bae6fd; font-weight: 800; }
@@ -34,6 +54,23 @@ button, input { font: inherit; }
 .warning { padding: 14px 16px; border-radius: 16px; color: #854d0e; background: #fef3c7; border: 1px solid #facc15; font-weight: 800; }
 .formula { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; padding: 18px; color: #334155; }
 .formula p { margin: 0; }
+.buildBadge { margin: 12px 0 0; text-align: center; color: #64748b; font-size: .85rem; font-weight: 800; }
+.currentBox { margin-bottom: 16px; padding: 12px; border-radius: 16px; background: #f0fdfa; border: 1px solid #99f6e4; }
+.currentBox p { margin: 8px 0 0; line-height: 1.35; }
+.recipeDetail h2 { margin: 0 0 4px; color: #172033; }
+.medicineItem { margin-top: 14px; padding: 12px; border: 1px solid #dbe6ee; border-radius: 16px; background: #f8fafc; }
+.medicineItem h3 { margin: 0 0 6px; color: #0f766e; }
+.medicineItem p { margin: 0 0 8px; color: #334155; line-height: 1.35; }
+
+@media (max-width: 1180px) {
+  .appShell { grid-template-columns: 220px minmax(0, 1fr); }
+  .detailPanel { grid-column: 1 / -1; position: static; }
+}
+
+@media (max-width: 850px) {
+  .appShell, .grid, .results { grid-template-columns: 1fr; }
+  .historyPanel { position: static; }
+  .hero { align-items: flex-start; flex-direction: column; }
 
 @media (max-width: 850px) {
   .hero { align-items: flex-start; flex-direction: column; }
@@ -42,6 +79,8 @@ button, input { font: inherit; }
 
 @media (max-width: 560px) {
   .page { width: min(100% - 20px, 1120px); padding: 18px 0; }
+  .hero, .panel, .historyPanel { padding: 18px; border-radius: 20px; }
+  .tabs button, .primaryAction, .secondaryAction { width: 100%; justify-content: center; }
   .hero, .panel { padding: 18px; border-radius: 20px; }
   .grid, .results { grid-template-columns: 1fr; }
   .tabs button { width: 100%; justify-content: center; }
