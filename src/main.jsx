@@ -38,9 +38,9 @@ function Field({ label, value, onChange, min = '0', step = 'any', suffix, help }
   );
 }
 
-function ResultCard({ title, value, detail }) {
+function ResultCard({ title, value, detail, className }) {
   return (
-    <article className="resultCard">
+    <article className={`resultCard${className ? ` ${className}` : ''}`}>
       <span>{title}</span>
       <strong>{value}</strong>
       {detail && <small>{detail}</small>}
@@ -229,7 +229,7 @@ function App() {
 
         <section className="results" aria-live="polite">
           <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
-          <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={`${result.total} calculado`} />
+          <ResultCard className="primary" title={result.primaryLabel} value={result.deliveredTotal} detail={`${result.total} calculado`} />
           <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
           {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
         </section>
