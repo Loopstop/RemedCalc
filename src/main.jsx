@@ -20,13 +20,6 @@ const initialForm = {
 const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
 const positiveNumber = (value) => Math.max(Number(value) || 0, 0);
 const nextName = (prefix, length) => `${prefix} ${length + 1}`;
-import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Calculator, Pill, Droplets, PackageCheck } from 'lucide-react';
-import './styles.css';
-
-const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
-const positiveNumber = (value) => Math.max(Number(value) || 0, 0);
 
 function Field({ label, value, onChange, min = '0', step = 'any', suffix, help }) {
   return (
@@ -78,18 +71,6 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   }, [recipes]);
-function App() {
-  const [form, setForm] = useState({
-    mode: 'comprimidos',
-    dose: '1',
-    intervalHours: '8',
-    treatmentDays: '30',
-    deliveryDays: '30',
-    reservePercent: '0',
-    unitsPerBlister: '10',
-    blistersPerBox: '3',
-    mlPerBottle: '100',
-  });
 
   const setValue = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -251,7 +232,7 @@ function App() {
         </section>
 
         <section className="results" aria-live="polite">
-          <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${roundUp(result.deliveryDays)} dia(s)`} />
+          <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
           <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
           <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
           {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
@@ -301,63 +282,6 @@ function App() {
           <p className="emptyText">Selecione uma receita para ver o histórico.</p>
         )}
       </aside>
-
-  return (
-    <main className="page">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Farmácia · dispensação</p>
-          <h1>RemedCalc</h1>
-          <p>
-            Calcule rapidamente quantidade a entregar por período, dose, intervalo e apresentação do medicamento.
-          </p>
-        </div>
-        <div className="heroIcon"><Calculator size={54} /></div>
-      </section>
-
-      <section className="panel">
-        <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
-          <button className={!isMl ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
-            <Pill size={18} /> Comprimidos
-          </button>
-          <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
-            <Droplets size={18} /> Líquidos / mL
-          </button>
-        </div>
-
-        <div className="grid">
-          <Field label={isMl ? 'Dose por tomada' : 'Comprimidos por tomada'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-          <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
-          <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-          <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Use para entrega parcial, mensal ou total." />
-          <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Opcional: perdas, arredondamentos ou política interna." />
-
-          {isMl ? (
-            <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
-          ) : (
-            <>
-              <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
-              <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
-            </>
-          )}
-        </div>
-      </section>
-
-      <section className="results" aria-live="polite">
-        <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${roundUp(result.deliveryDays)} dia(s)`} />
-        <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
-        <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
-        {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
-      </section>
-
-      {result.warning && <p className="warning">Atenção: {result.warning}</p>}
-
-      <section className="formula">
-        <PackageCheck size={20} />
-        <p>
-          Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.
-        </p>
-      </section>
     </main>
   );
 }
