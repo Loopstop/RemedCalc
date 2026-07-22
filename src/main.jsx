@@ -192,7 +192,7 @@ function App() {
         <section className="hero">
           <div>
             <p className="eyebrow">Farmácia · dispensação</p>
-            <h1>RemedCalc</h1>
+            <h1>Calculadora de dispensação</h1>
             <p>Calcule rapidamente quantidade a entregar por período, dose, intervalo e apresentação do medicamento.</p>
           </div>
           <div className="heroIcon"><Calculator size={54} /></div>
@@ -245,7 +245,7 @@ function App() {
           <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
         </section>
 
-        <p className="buildBadge">Versão: histórico local · RemedCalc v2</p>
+        <p className="buildBadge">Versão: histórico local · v2</p>
       </section>
 
       <aside className="historyPanel detailPanel">
