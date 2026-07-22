@@ -53,7 +53,7 @@ function ResultCard({ title, value, detail }) {
 function summarizeMedicine(medicine) {
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
-  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  return `${type}: ${medicine.deliveredTotal} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
 }
 
 function App() {
@@ -93,6 +93,7 @@ function App() {
         dosesPerDay,
         total: roundUp(totalDoseUnits),
         totalWithReserve: roundUp(totalWithReserve),
+        deliveredTotal: mlPerBottle > 0 ? bottles * mlPerBottle : totalWithReserve,
         primaryLabel: 'mL a entregar',
         packageA: bottles,
         packageALabel: 'frasco(s)',
@@ -112,6 +113,7 @@ function App() {
       dosesPerDay,
       total: roundUp(totalDoseUnits),
       totalWithReserve: roundUp(totalWithReserve),
+      deliveredTotal: unitsPerBlister > 0 ? blisters * unitsPerBlister : totalWithReserve,
       primaryLabel: 'comprimido(s) a entregar',
       packageA: blisters,
       packageALabel: 'cartela(s)',
@@ -137,6 +139,7 @@ function App() {
     reservePercent: positiveNumber(form.reservePercent),
     total: result.total,
     totalWithReserve: result.totalWithReserve,
+    deliveredTotal: result.deliveredTotal,
     packageALabel: result.packageALabel,
     packageA: result.packageA,
     packageBLabel: result.packageBLabel,
@@ -233,7 +236,7 @@ function App() {
 
         <section className="results" aria-live="polite">
           <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
-          <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
+          <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={`${positiveNumber(form.reservePercent) ? result.totalWithReserve : result.total} calculado`} />
           <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
           {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
         </section>
@@ -242,7 +245,7 @@ function App() {
 
         <section className="formula">
           <PackageCheck size={20} />
-          <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
+          <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. As embalagens são arredondadas para cima, então a quantidade entregue pode ser maior que o cálculo exato.</p>
         </section>
 
         <p className="buildBadge">Versão: histórico local · v2</p>
