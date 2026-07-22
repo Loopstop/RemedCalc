@@ -192,7 +192,7 @@ function App() {
         <section className="hero">
           <div>
             <p className="eyebrow">Farmácia · dispensação</p>
-            <h1>RemedCalc</h1>
+            <h1>Calculadora de dispensação</h1>
             <p>Calcule rapidamente quantidade a entregar por período, dose, intervalo e apresentação do medicamento.</p>
           </div>
           <div className="heroIcon"><Calculator size={54} /></div>
@@ -209,11 +209,11 @@ function App() {
           </div>
 
           <div className="grid">
-            <Field label={isMl ? 'Dose por tomada' : 'Comprimidos por tomada'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+            <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
             <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Use para entrega parcial, mensal ou total." />
-            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Opcional: perdas, arredondamentos ou política interna." />
+            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
+            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
 
             {isMl ? (
               <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
@@ -245,7 +245,7 @@ function App() {
           <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
         </section>
 
-        <p className="buildBadge">Versão: histórico local · RemedCalc v2</p>
+        <p className="buildBadge">Versão: histórico local · v2</p>
       </section>
 
       <aside className="historyPanel detailPanel">
