@@ -10,8 +10,8 @@ const initialForm = {
   dose: '0',
   intervalHours: '0',
   treatmentDays: '0',
-  unitsPerBlister: '10',
-  blistersPerBox: '3',
+  unitsPerBlister: '0',
+  blistersPerBox: '0',
   mlPerBottle: '100',
 };
 
