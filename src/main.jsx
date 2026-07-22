@@ -7,11 +7,9 @@ const STORAGE_KEY = 'remedcalc.receitas.v1';
 
 const initialForm = {
   mode: 'comprimidos',
-  dose: '1',
-  intervalHours: '8',
-  treatmentDays: '30',
-  deliveryDays: '30',
-  reservePercent: '0',
+  dose: '0',
+  intervalHours: '0',
+  treatmentDays: '0',
   unitsPerBlister: '10',
   blistersPerBox: '3',
   mlPerBottle: '100',
@@ -53,7 +51,8 @@ function ResultCard({ title, value, detail }) {
 function summarizeMedicine(medicine) {
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
-  return `${type}: ${medicine.deliveredTotal} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  const total = medicine.deliveredTotal ?? medicine.totalWithReserve ?? medicine.total;
+  return `${type}: ${total} ${unit} por ${medicine.deliveryDays || medicine.treatmentDays || 0} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
 }
 
 function App() {
@@ -78,12 +77,10 @@ function App() {
     const dose = positiveNumber(form.dose);
     const intervalHours = positiveNumber(form.intervalHours);
     const treatmentDays = positiveNumber(form.treatmentDays);
-    const requestedDays = positiveNumber(form.deliveryDays);
-    const deliveryDays = Math.min(requestedDays || treatmentDays, treatmentDays || requestedDays);
-    const reserveFactor = 1 + positiveNumber(form.reservePercent) / 100;
+    const deliveryDays = treatmentDays;
     const dosesPerDay = intervalHours > 0 ? 24 / intervalHours : 0;
     const totalDoseUnits = dose * dosesPerDay * deliveryDays;
-    const totalWithReserve = totalDoseUnits * reserveFactor;
+    const totalWithReserve = totalDoseUnits;
 
     if (form.mode === 'ml') {
       const mlPerBottle = positiveNumber(form.mlPerBottle);
@@ -98,7 +95,7 @@ function App() {
         packageA: bottles,
         packageALabel: 'frasco(s)',
         packageADetail: mlPerBottle ? `${mlPerBottle} mL por frasco` : 'Informe o volume do frasco',
-        warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+        warning: '',
       };
     }
 
@@ -121,7 +118,7 @@ function App() {
       packageB: boxes,
       packageBLabel: 'caixa(s)',
       packageBDetail: unitsPerBox ? `${unitsPerBox} comprimidos por caixa` : 'Informe cartelas por caixa',
-      warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+      warning: '',
     };
   }, [form]);
 
@@ -135,8 +132,6 @@ function App() {
     dose: positiveNumber(form.dose),
     intervalHours: positiveNumber(form.intervalHours),
     treatmentDays: positiveNumber(form.treatmentDays),
-    deliveryDays: result.deliveryDays,
-    reservePercent: positiveNumber(form.reservePercent),
     total: result.total,
     totalWithReserve: result.totalWithReserve,
     deliveredTotal: result.deliveredTotal,
@@ -215,8 +210,6 @@ function App() {
             <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
             <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
-            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
 
             {isMl ? (
               <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
@@ -236,12 +229,10 @@ function App() {
 
         <section className="results" aria-live="polite">
           <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
-          <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={`${positiveNumber(form.reservePercent) ? result.totalWithReserve : result.total} calculado`} />
+          <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={`${result.total} calculado`} />
           <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
           {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
         </section>
-
-        {result.warning && <p className="warning">Atenção: {result.warning}</p>}
 
         <section className="formula">
           <PackageCheck size={20} />
