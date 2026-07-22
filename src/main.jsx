@@ -1,20 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calculator, ClipboardList, Droplets, PackageCheck, Pill, Plus, Save } from 'lucide-react';
+import { Calculator, ClipboardList, Droplets, PackageCheck, Pill, Plus, Save, Syringe } from 'lucide-react';
 import './styles.css';
 
 const STORAGE_KEY = 'remedcalc.receitas.v1';
 
 const initialForm = {
   mode: 'comprimidos',
-  dose: '1',
-  intervalHours: '8',
-  treatmentDays: '30',
-  deliveryDays: '30',
-  reservePercent: '0',
-  unitsPerBlister: '10',
-  blistersPerBox: '3',
+  dose: '0',
+  intervalHours: '0',
+  treatmentDays: '0',
+  unitsPerBlister: '0',
+  blistersPerBox: '0',
   mlPerBottle: '100',
+  insulinMode: 'tubete',
+  insulinMorning: '0',
+  insulinAfternoon: '0',
+  insulinNight: '0',
+  insulinLunch: '0',
+  insulinDinner: '0',
 };
 
 const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
@@ -40,9 +44,9 @@ function Field({ label, value, onChange, min = '0', step = 'any', suffix, help }
   );
 }
 
-function ResultCard({ title, value, detail }) {
+function ResultCard({ title, value, detail, className }) {
   return (
-    <article className="resultCard">
+    <article className={`resultCard ${className || ''}`}>
       <span>{title}</span>
       <strong>{value}</strong>
       {detail && <small>{detail}</small>}
@@ -51,9 +55,11 @@ function ResultCard({ title, value, detail }) {
 }
 
 function summarizeMedicine(medicine) {
-  const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
-  const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
-  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  const type = medicine.mode === 'ml' ? 'Líquido' : medicine.mode === 'insulina' ? 'Insulina' : 'Comprimido';
+  const unit = medicine.mode === 'ml' ? 'mL' : medicine.mode === 'insulina' ? 'UI' : 'comprimido(s)';
+  const total = medicine.deliveredTotal ?? medicine.totalWithReserve ?? medicine.total;
+  const days = medicine.deliveryDays || medicine.treatmentDays || 0;
+  return `${type}: ${total} ${unit} por ${days} dia(s)${medicine.mode === 'insulina' ? '' : `, ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`}`;
 }
 
 function App() {
@@ -75,15 +81,28 @@ function App() {
   const setValue = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
 
   const result = useMemo(() => {
+    if (form.mode === 'insulina') {
+      const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
+      const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
+      const deliveredTotal = totalUi > 0 ? Math.ceil(totalUi * 30 / divisor) : 0;
+      return {
+        primaryLabel: form.insulinMode === 'tubete' ? 'Tubetes a entregar' : 'Frascos a entregar',
+        deliveredTotal,
+        total: deliveredTotal,
+        totalWithReserve: deliveredTotal,
+        packageALabel: form.insulinMode === 'tubete' ? 'tubete(s)' : 'frasco(s)',
+        packageA: deliveredTotal,
+        packageADetail: divisor === 300 ? 'Dividido por 300 UI' : 'Dividido por 1000 UI',
+      };
+    }
+
     const dose = positiveNumber(form.dose);
     const intervalHours = positiveNumber(form.intervalHours);
     const treatmentDays = positiveNumber(form.treatmentDays);
-    const requestedDays = positiveNumber(form.deliveryDays);
-    const deliveryDays = Math.min(requestedDays || treatmentDays, treatmentDays || requestedDays);
-    const reserveFactor = 1 + positiveNumber(form.reservePercent) / 100;
+    const deliveryDays = treatmentDays;
     const dosesPerDay = intervalHours > 0 ? 24 / intervalHours : 0;
     const totalDoseUnits = dose * dosesPerDay * deliveryDays;
-    const totalWithReserve = totalDoseUnits * reserveFactor;
+    const totalWithReserve = totalDoseUnits;
 
     if (form.mode === 'ml') {
       const mlPerBottle = positiveNumber(form.mlPerBottle);
@@ -93,11 +112,12 @@ function App() {
         dosesPerDay,
         total: roundUp(totalDoseUnits),
         totalWithReserve: roundUp(totalWithReserve),
+        deliveredTotal: mlPerBottle > 0 ? bottles * mlPerBottle : totalWithReserve,
         primaryLabel: 'mL a entregar',
         packageA: bottles,
         packageALabel: 'frasco(s)',
         packageADetail: mlPerBottle ? `${mlPerBottle} mL por frasco` : 'Informe o volume do frasco',
-        warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+        warning: '',
       };
     }
 
@@ -112,6 +132,7 @@ function App() {
       dosesPerDay,
       total: roundUp(totalDoseUnits),
       totalWithReserve: roundUp(totalWithReserve),
+      deliveredTotal: unitsPerBlister > 0 ? blisters * unitsPerBlister : totalWithReserve,
       primaryLabel: 'comprimido(s) a entregar',
       packageA: blisters,
       packageALabel: 'cartela(s)',
@@ -119,29 +140,47 @@ function App() {
       packageB: boxes,
       packageBLabel: 'caixa(s)',
       packageBDetail: unitsPerBox ? `${unitsPerBox} comprimidos por caixa` : 'Informe cartelas por caixa',
-      warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+      warning: '',
     };
   }, [form]);
 
   const isMl = form.mode === 'ml';
+  const isInsulin = form.mode === 'insulina';
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes.at(-1) || null;
 
-  const buildMedicine = () => ({
-    id: crypto.randomUUID(),
-    name: nextName('Remédio', currentMedicines.length),
-    mode: form.mode,
-    dose: positiveNumber(form.dose),
-    intervalHours: positiveNumber(form.intervalHours),
-    treatmentDays: positiveNumber(form.treatmentDays),
-    deliveryDays: result.deliveryDays,
-    reservePercent: positiveNumber(form.reservePercent),
-    total: result.total,
-    totalWithReserve: result.totalWithReserve,
-    packageALabel: result.packageALabel,
-    packageA: result.packageA,
-    packageBLabel: result.packageBLabel,
-    packageB: result.packageB,
-  });
+  const buildMedicine = () => {
+    const base = {
+      id: crypto.randomUUID(),
+      mode: form.mode,
+      total: result.total,
+      totalWithReserve: result.totalWithReserve,
+      deliveredTotal: result.deliveredTotal,
+      packageALabel: result.packageALabel,
+      packageA: result.packageA,
+    };
+    if (form.mode === 'insulina') {
+      return {
+        ...base,
+        name: nextName('Insulina', currentMedicines.length),
+        insulinMode: form.insulinMode,
+        insulinMorning: positiveNumber(form.insulinMorning),
+        insulinAfternoon: positiveNumber(form.insulinAfternoon),
+        insulinNight: positiveNumber(form.insulinNight),
+        insulinLunch: positiveNumber(form.insulinLunch),
+        insulinDinner: positiveNumber(form.insulinDinner),
+      };
+    }
+    return {
+      ...base,
+      name: nextName('Remédio', currentMedicines.length),
+      dose: positiveNumber(form.dose),
+      intervalHours: positiveNumber(form.intervalHours),
+      treatmentDays: positiveNumber(form.treatmentDays),
+      deliveryDays: result.deliveryDays,
+      packageBLabel: result.packageBLabel,
+      packageB: result.packageB,
+    };
+  };
 
   const addMedicine = () => {
     setCurrentMedicines((items) => [...items, buildMedicine()]);
@@ -200,27 +239,54 @@ function App() {
 
         <section className="panel">
           <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
-            <button className={!isMl ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
+            <button className={!isMl && !isInsulin ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
               <Pill size={18} /> Comprimidos
             </button>
             <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
               <Droplets size={18} /> Líquidos / mL
             </button>
+            <button className={isInsulin ? 'active' : ''} onClick={() => setValue('mode')('insulina')}>
+              <Syringe size={18} /> Insulina
+            </button>
           </div>
 
           <div className="grid">
-            <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-            <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
-            <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
-            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
+            {isInsulin ? (
+              <>
+                <div className="field insulin-presentation">
+                  <span>Apresentação</span>
+                  <div className="inputWrap">
+                    <label className="radio">
+                      <input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} />
+                      <span>Tubete</span>
+                    </label>
+                    <label className="radio">
+                      <input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} />
+                      <span>Frasco</span>
+                    </label>
+                  </div>
+                </div>
 
-            {isMl ? (
-              <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" />
+                <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" />
+                <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" />
+                <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" />
+                <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" />
+              </>
             ) : (
               <>
-                <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
-                <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+                <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
+                <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
+
+                {isMl ? (
+                  <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                ) : (
+                  <>
+                    <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
+                    <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                  </>
+                )}
               </>
             )}
           </div>
@@ -232,17 +298,28 @@ function App() {
         </section>
 
         <section className="results" aria-live="polite">
-          <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
-          <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
-          <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
-          {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
+          {isInsulin ? (
+            <>
+              <ResultCard title="Total de UI/dia" value={positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner)} detail="Soma dos 5 períodos" />
+              <ResultCard className="primary" title={result.primaryLabel} value={result.deliveredTotal} detail={result.packageADetail} />
+            </>
+          ) : (
+            <>
+              <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+              <ResultCard className="primary" title={result.primaryLabel} value={result.deliveredTotal} detail={`${result.total} calculado`} />
+              <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
+              {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
+            </>
+          )}
         </section>
-
-        {result.warning && <p className="warning">Atenção: {result.warning}</p>}
 
         <section className="formula">
           <PackageCheck size={20} />
-          <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
+          <p>
+            {isInsulin
+              ? `Fórmula: (soma das UIs × 30 dias) ÷ ${form.insulinMode === 'tubete' ? '300' : '1000'}. A quantidade é arredondada para cima.`
+              : 'Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. As embalagens são arredondadas para cima, então a quantidade entregue pode ser maior que o cálculo exato.'}
+          </p>
         </section>
 
         <p className="buildBadge">Versão: histórico local · v2</p>
