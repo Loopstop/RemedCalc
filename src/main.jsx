@@ -86,7 +86,7 @@ function App() {
       const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
       const base = totalUi * 30 / divisor;
       const useUnits = base;
-      const deliverUnits = Math.ceil(base) + 1;
+      const deliverUnits = Number.isInteger(base) ? base + 1 : Math.ceil(base);
       return {
         useLabel: form.insulinMode === 'tubete' ? 'Tubetes a usar' : 'Frascos a usar',
         useUnits,
