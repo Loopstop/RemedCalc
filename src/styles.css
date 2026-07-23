@@ -50,7 +50,7 @@ button { cursor: pointer; }
 .primaryAction { border: 1px solid #0f766e; background: #0f766e; color: white; }
 .secondaryAction { border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; }
 
-.results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+.results { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
 .resultCard { padding: 12px; border-radius: 12px; background: #0f172a; color: white; }
 .resultCard span { display: block; color: #94a3b8; font-weight: 800; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
 .resultCard strong { display: block; margin: 6px 0 4px; font-size: clamp(1.2rem, 2.6vw, 1.8rem); line-height: 1; }
