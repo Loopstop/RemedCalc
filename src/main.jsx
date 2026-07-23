@@ -190,6 +190,7 @@ function App() {
 
   const addMedicine = () => {
     setCurrentMedicines((items) => [...items, buildMedicine()]);
+    setForm(initialForm);
   };
 
   const startNewRecipe = () => {
