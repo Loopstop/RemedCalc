@@ -19,6 +19,7 @@ const initialForm = {
   insulinNight: '0',
   insulinLunch: '0',
   insulinDinner: '0',
+  insulinDays: '30',
 };
 
 const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
@@ -84,7 +85,8 @@ function App() {
     if (form.mode === 'insulina') {
       const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
       const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
-      const base = totalUi * 30 / divisor;
+      const days = positiveNumber(form.insulinDays);
+      const base = totalUi * days / divisor;
       const useUnits = base;
       const deliverUnits = Number.isInteger(base) ? base + 1 : Math.ceil(base);
       return {
@@ -276,6 +278,7 @@ function App() {
                 <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" />
                 <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" />
                 <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" />
+                <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
               </>
             ) : (
               <>
