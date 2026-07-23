@@ -124,6 +124,7 @@ function App() {
         packageALabel: 'frasco(s)',
         packageADetail: mlPerBottle ? `${mlPerBottle} mL por frasco` : 'Informe o volume do frasco',
         warning: '',
+        stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? deliveredTotal / totalWithReserve * deliveryDays : 0,
       };
     }
 
@@ -147,6 +148,7 @@ function App() {
       packageBLabel: 'caixa(s)',
       packageBDetail: unitsPerBox ? `${unitsPerBox} comprimidos por caixa` : 'Informe cartelas por caixa',
       warning: '',
+      stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? (deliveredTotal / (dose * dosesPerDay)) : 0,
     };
   }, [form]);
 
@@ -316,6 +318,7 @@ function App() {
             <>
               <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
               <ResultCard className="primary" title={result.primaryLabel} value={result.deliveredTotal} detail={`${result.total} calculado`} />
+              <ResultCard title="Duração do estoque" value={`${roundUp(result.stockDurationDays)} dia(s)`} detail="Baseado na quantidade entregue" />
               <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
               {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
             </>
