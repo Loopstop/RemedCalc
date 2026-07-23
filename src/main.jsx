@@ -84,14 +84,18 @@ function App() {
     if (form.mode === 'insulina') {
       const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
       const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
-      const deliveredTotal = totalUi > 0 ? Math.ceil(totalUi * 30 / divisor) : 0;
+      const base = totalUi * 30 / divisor;
+      const useUnits = base;
+      const deliverUnits = Math.ceil(base) + 1;
       return {
+        useLabel: form.insulinMode === 'tubete' ? 'Tubetes a usar' : 'Frascos a usar',
+        useUnits,
         primaryLabel: form.insulinMode === 'tubete' ? 'Tubetes a entregar' : 'Frascos a entregar',
-        deliveredTotal,
-        total: deliveredTotal,
-        totalWithReserve: deliveredTotal,
+        deliveredTotal: deliverUnits,
+        total: deliverUnits,
+        totalWithReserve: deliverUnits,
         packageALabel: form.insulinMode === 'tubete' ? 'tubete(s)' : 'frasco(s)',
-        packageA: deliveredTotal,
+        packageA: deliverUnits,
         packageADetail: divisor === 300 ? 'Dividido por 300 UI' : 'Dividido por 1000 UI',
       };
     }
@@ -301,6 +305,7 @@ function App() {
           {isInsulin ? (
             <>
               <ResultCard title="Total de UI/dia" value={positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner)} detail="Soma dos 5 períodos" />
+              <ResultCard title={result.useLabel} value={roundUp(result.useUnits)} detail="Valor exato do cálculo" />
               <ResultCard className="primary" title={result.primaryLabel} value={result.deliveredTotal} detail={result.packageADetail} />
             </>
           ) : (
