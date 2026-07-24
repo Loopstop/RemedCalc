@@ -88,11 +88,16 @@ function App() {
     if (form.mode === 'ml') {
       const mlPerBottle = positiveNumber(form.mlPerBottle);
       const bottles = mlPerBottle > 0 ? Math.ceil(totalWithReserve / mlPerBottle) : 0;
+      const deliveredTotal = mlPerBottle > 0 ? bottles * mlPerBottle : totalWithReserve;
       return {
         deliveryDays,
         dosesPerDay,
         total: roundUp(totalDoseUnits),
         totalWithReserve: roundUp(totalWithReserve),
+<<<<<<< ours
+=======
+        deliveredTotal,
+>>>>>>> theirs
         primaryLabel: 'mL a entregar',
         packageA: bottles,
         packageALabel: 'frasco(s)',
@@ -107,11 +112,16 @@ function App() {
     const blisters = unitsPerBlister > 0 ? Math.ceil(totalWithReserve / unitsPerBlister) : 0;
     const boxes = unitsPerBox > 0 ? Math.ceil(totalWithReserve / unitsPerBox) : 0;
 
+    const deliveredTotal = unitsPerBlister > 0 ? blisters * unitsPerBlister : totalWithReserve;
     return {
       deliveryDays,
       dosesPerDay,
       total: roundUp(totalDoseUnits),
       totalWithReserve: roundUp(totalWithReserve),
+<<<<<<< ours
+=======
+      deliveredTotal,
+>>>>>>> theirs
       primaryLabel: 'comprimido(s) a entregar',
       packageA: blisters,
       packageALabel: 'cartela(s)',
