@@ -139,6 +139,7 @@ function App() {
   }, [form]);
 
   const isMl = form.mode === 'ml';
+  const isInsulin = form.mode === 'insulina';
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes.at(-1) || null;
 
   const buildMedicine = () => ({
