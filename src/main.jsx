@@ -20,8 +20,9 @@ const initialForm = {
   insulinNight: '0',
   insulinLunch: '0',
   insulinDinner: '0',
-  insulinDays: '0',
+  insulinDays: '30',
   weekly: '0',
+  expiresAt: '',
 };
 
 const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
@@ -82,6 +83,7 @@ function App() {
     }
   });
   const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+  const [view, setView] = useState('calculator');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
@@ -230,6 +232,7 @@ function App() {
       id: crypto.randomUUID(),
       name: nextName('Receita', recipes.length),
       createdAt: new Date().toLocaleString('pt-BR'),
+      expiresAt: form.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       medicines,
     };
 
@@ -276,16 +279,69 @@ function App() {
 
         <section className="panel">
           <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
-            <button className={!isMl && !isInsulin ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
-              <Pill size={18} /> Comprimidos
+            <button className={!isMl && !isInsulin && view === 'calculator' ? 'active' : ''} onClick={() => setView('calculator')}>
+              <Calculator size={18} /> Calculadora
             </button>
-            <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
-              <Droplets size={18} /> Líquidos / mL
-            </button>
-            <button className={isInsulin ? 'active' : ''} onClick={() => setValue('mode')('insulina')}>
-              <Syringe size={18} /> Insulina
+            <button className={view === 'expiration' ? 'active' : ''} onClick={() => setView('expiration')}>
+              <ClipboardList size={18} /> Vencimento de receitas
             </button>
           </div>
+
+          {view === 'calculator' && (
+            <div className="grid">
+              {isInsulin ? (
+                <>
+                  <div className="field">
+                    <span>Apresentação</span>
+                    <div className="radio">
+                      <label><input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} /> Tubete</label>
+                      <label><input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} /> Frasco</label>
+                    </div>
+                  </div>
+                  <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" min="0" step="any" />
+                  <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" min="0" step="any" />
+                  <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" min="0" step="any" />
+                  <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" min="0" step="any" />
+                  <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" min="0" step="any" />
+                  <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
+                </>
+              ) : (
+                <>
+                  <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+                  <Field
+                    label="Intervalo entre doses"
+                    value={form.intervalHours}
+                    onChange={setValue('intervalHours')}
+                    suffix="horas"
+                    help={
+                      <span className="helpInline">
+                        <span>Ex.: de 8 em 8 horas = 8</span>
+                        {!isMl && (
+                          <label className="inlineCheckbox">
+                            <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                            <strong>Semanal</strong>
+                          </label>
+                        )}
+                      </span>
+                    }
+                    disabled={form.weekly === '1'}
+                  />
+                  <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
+                  <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
+                  {!isInsulin && <Field label="Validade da receita" value={form.expiresAt} onChange={setValue('expiresAt')} suffix="" help="Data em que esta receita vence. Use para controle de dispensação." />}
+
+                  {isMl ? (
+                    <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                  ) : (
+                    <>
+                      <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
+                      <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="grid">
             {isInsulin ? (
@@ -327,6 +383,7 @@ function App() {
                 />
                 <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
                 <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
+                {!isInsulin && <Field label="Validade da receita" value={form.expiresAt} onChange={setValue('expiresAt')} suffix="" help="Data em que esta receita vence. Use para controle de dispensação." />}
 
                 {isMl ? (
                   <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
@@ -366,14 +423,45 @@ function App() {
 
         {result.warning && <p className="warning">Atenção: {result.warning}</p>}
 
-        <section className="formula">
-          <PackageCheck size={20} />
-          <p>
-            {form.mode === 'insulina'
-              ? 'Fórmula: insulina = (soma das doses UI) × dias de tratamento ÷ divisor da apresentação.'
-              : 'Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.'}
-          </p>
-        </section>
+        {view === 'calculator' && (
+          <section className="formula">
+            <PackageCheck size={20} />
+            <p>
+              {form.mode === 'insulina'
+                ? 'Fórmula: insulina = (soma das doses UI) × dias de tratamento ÷ divisor da apresentação.'
+                : 'Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.'}
+            </p>
+          </section>
+        )}
+
+        {view === 'expiration' && (
+          <section className="panel" aria-label="Validação de vencimento de receitas">
+            <div className="panelTitle">
+              <ClipboardList size={20} />
+              <strong>Vencimento de receitas</strong>
+            </div>
+            {recipes.length === 0 && <p className="emptyText">Nenhuma receita arquivada.</p>}
+            <div className="recipeList">
+              {recipes.map((recipe) => {
+                const today = new Date();
+                const expires = new Date(recipe.expiresAt || '');
+                const diffMs = expires - new Date(today.toISOString().slice(0, 10));
+                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                const status = isNaN(diffDays) || diffDays < 0 ? 'Vencida' : diffDays <= 7 ? 'Vence em breve' : 'Válida';
+                const statusColor = status === 'Vencida' ? '#b91c1c' : status === 'Vence em breve' ? '#b45309' : '#15803d';
+                return (
+                  <article key={recipe.id} className="medicineItem">
+                    <h3>{recipe.name}</h3>
+                    <p>Criada em: {recipe.createdAt}</p>
+                    <p>Vencimento: {recipe.expiresAt ? new Date(recipe.expiresAt).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                    <p style={{ color: statusColor, fontWeight: 800 }}>{status}{diffDays >= 0 ? ` (${diffDays} dia(s))` : ''}</p>
+                    <small>{recipe.medicines.length} remédio(s)</small>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <p className="buildBadge">Versão: histórico local · v2</p>
       </section>
