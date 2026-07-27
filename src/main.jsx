@@ -66,7 +66,7 @@ function summarizeMedicine(medicine) {
   }
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
-  const freq = medicine.weekly ? '1x/semana' : `de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  const freq = medicine.weekly ? `${medicine.weeklyDoses}x/${medicine.deliveryDays || medicine.treatmentDays || 0} dias` : `de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
   const stock = medicine.stockDurationDays ? ` · estoque: ${roundUp(medicine.stockDurationDays)} dia(s)` : '';
   return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} ${freq}${stock}`;
 }
@@ -120,8 +120,18 @@ function App() {
     const treatmentDays = positiveNumber(form.treatmentDays);
     const requestedDays = positiveNumber(form.deliveryDays);
     const deliveryDays = Math.min(requestedDays || treatmentDays, treatmentDays || requestedDays);
-    const dosesPerDay = weekly ? 1 / 7 : (intervalHours > 0 ? 24 / intervalHours : 0);
-    const totalDoseUnits = weekly ? Math.ceil(deliveryDays / 7) * dose : dose * dosesPerDay * deliveryDays;
+    let weeklyDoses = 0;
+    if (weekly) {
+      const today = new Date();
+      const startDay = today.getDay();
+      for (let i = 0; i < Math.max(deliveryDays, 0); i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        if (d.getDay() === startDay) weeklyDoses++;
+      }
+    }
+    const dosesPerDay = weekly ? weeklyDoses / 7 : (intervalHours > 0 ? 24 / intervalHours : 0);
+    const totalDoseUnits = weekly ? weeklyDoses * dose : dose * dosesPerDay * deliveryDays;
     const totalWithReserve = totalDoseUnits;
 
     if (form.mode === 'ml') {
@@ -139,6 +149,7 @@ function App() {
         packageALabel: 'frasco(s)',
         packageADetail: mlPerBottle ? `${mlPerBottle} mL por frasco` : 'Informe o volume do frasco',
         warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+        weeklyDoses,
         stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? deliveredTotal / totalWithReserve * deliveryDays : 0,
       };
     }
@@ -164,6 +175,7 @@ function App() {
       packageBLabel: 'caixa(s)',
       packageBDetail: unitsPerBox ? `${unitsPerBox} comprimidos por caixa` : 'Informe cartelas por caixa',
       warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+      weeklyDoses,
       stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? deliveredTotal / (dose * dosesPerDay) : 0,
     };
   }, [form]);
@@ -199,6 +211,7 @@ function App() {
       treatmentDays: positiveNumber(form.treatmentDays),
       deliveryDays: result.deliveryDays,
       weekly,
+      weeklyDoses: result.weeklyDoses,
       stockDurationDays: result.stockDurationDays,
       packageBLabel: result.packageBLabel,
       packageB: result.packageB,
@@ -339,7 +352,7 @@ function App() {
           ) : (
             <>
               {weekly ? (
-                <ResultCard title="Frequência" value="1x/semana" detail={`${form.dose} ${isMl ? 'mL' : 'comp.'} por semana · ${result.deliveryDays} dia(s)`} />
+                <ResultCard title="Frequência" value={`${result.weeklyDoses}x/${result.deliveryDays} dias`} detail={`${form.dose} ${isMl ? 'mL' : 'comp.'} por semana`} />
               ) : (
                 <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
               )}
