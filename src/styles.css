@@ -57,6 +57,9 @@ button { cursor: pointer; }
 .helpInline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .inlineCheckbox { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 700; font-size: .78rem; color: #334155; }
 .inlineCheckbox input { width: auto; accent-color: #0f766e; }
+.radio { display: inline-flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px; }
+.radio label { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .82rem; color: #334155; cursor: pointer; }
+.radio input { width: auto; accent-color: #0f766e; }
 .buildBadge { margin: 6px 0 0; text-align: center; color: #64748b; font-size: .78rem; font-weight: 800; }
 .currentBox { margin-bottom: 10px; padding: 8px; border-radius: 12px; background: #f0fdfa; border: 1px solid #99f6e4; }
 .currentBox p { margin: 6px 0 0; line-height: 1.2; font-size: .82rem; }

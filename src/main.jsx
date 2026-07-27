@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calculator, ClipboardList, Droplets, PackageCheck, Pill, Plus, Save } from 'lucide-react';
+import { Calculator, ClipboardList, Droplets, PackageCheck, Pill, Plus, Save, Syringe } from 'lucide-react';
 import './styles.css';
 
 const STORAGE_KEY = 'remedcalc.receitas.v1';
@@ -15,6 +15,13 @@ const initialForm = {
   unitsPerBlister: '10',
   blistersPerBox: '3',
   mlPerBottle: '100',
+  insulinMode: 'tubete',
+  insulinMorning: '0',
+  insulinAfternoon: '0',
+  insulinNight: '0',
+  insulinLunch: '0',
+  insulinDinner: '0',
+  insulinDays: '30',
   weekly: '0',
 };
 
@@ -53,8 +60,13 @@ function ResultCard({ title, value, detail }) {
 }
 
 function summarizeMedicine(medicine) {
-  const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
-  const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
+  const type = medicine.mode === 'ml' ? 'Líquido' : medicine.mode === 'insulina' ? 'Insulina' : 'Comprimido';
+  const unit = medicine.mode === 'ml' ? 'mL' : medicine.mode === 'insulina' ? 'UI' : 'comprimido(s)';
+  const total = medicine.deliveredTotal ?? medicine.totalWithReserve ?? medicine.total;
+  const days = medicine.deliveryDays || medicine.treatmentDays || 0;
+  if (medicine.mode === 'insulina') {
+    return `${type}: ${total} ${unit} por ${days} dia(s)`;
+  }
   const freq = medicine.weekly ? '1x/semana' : `de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
   return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} ${freq}`;
 }
@@ -79,7 +91,30 @@ function App() {
 
   const weekly = form.weekly === '1';
 
+  const isMl = form.mode === 'ml';
+  const isInsulin = form.mode === 'insulina';
+  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes.at(-1) || null;
+
   const result = useMemo(() => {
+    if (form.mode === 'insulina') {
+      const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
+      const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
+      const days = positiveNumber(form.insulinDays);
+      const deliveredTotal = totalUi > 0 && divisor > 0 ? Math.ceil(totalUi * days / divisor) : 0;
+      return {
+        deliveryDays: days,
+        dosesPerDay: 0,
+        total: deliveredTotal,
+        totalWithReserve: deliveredTotal,
+        deliveredTotal,
+        primaryLabel: form.insulinMode === 'tubete' ? 'Tubetes a entregar' : 'Frascos a entregar',
+        packageA: deliveredTotal,
+        packageALabel: form.insulinMode === 'tubete' ? 'tubete(s)' : 'frasco(s)',
+        packageADetail: divisor === 300 ? 'Dividido por 300 UI' : 'Dividido por 1000 UI',
+        warning: '',
+      };
+    }
+
     const dose = positiveNumber(form.dose);
     const intervalHours = positiveNumber(form.intervalHours);
     const treatmentDays = positiveNumber(form.treatmentDays);
@@ -132,26 +167,42 @@ function App() {
     };
   }, [form]);
 
-  const isMl = form.mode === 'ml';
-  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes.at(-1) || null;
-
-  const buildMedicine = () => ({
-    id: crypto.randomUUID(),
-    name: nextName('Remédio', currentMedicines.length),
-    mode: form.mode,
-    dose: positiveNumber(form.dose),
-    intervalHours: positiveNumber(form.intervalHours),
-    treatmentDays: positiveNumber(form.treatmentDays),
-    deliveryDays: result.deliveryDays,
-    reservePercent: positiveNumber(form.reservePercent),
-    weekly,
-    total: result.total,
-    totalWithReserve: result.totalWithReserve,
-    packageALabel: result.packageALabel,
-    packageA: result.packageA,
-    packageBLabel: result.packageBLabel,
-    packageB: result.packageB,
-  });
+  const buildMedicine = () => {
+    const base = {
+      id: crypto.randomUUID(),
+      mode: form.mode,
+      total: result.total,
+      totalWithReserve: result.totalWithReserve,
+      deliveredTotal: result.deliveredTotal,
+      packageALabel: result.packageALabel,
+      packageA: result.packageA,
+    };
+    if (form.mode === 'insulina') {
+      return {
+        ...base,
+        name: nextName('Insulina', currentMedicines.length),
+        insulinMode: form.insulinMode,
+        insulinMorning: positiveNumber(form.insulinMorning),
+        insulinAfternoon: positiveNumber(form.insulinAfternoon),
+        insulinNight: positiveNumber(form.insulinNight),
+        insulinLunch: positiveNumber(form.insulinLunch),
+        insulinDinner: positiveNumber(form.insulinDinner),
+        deliveryDays: result.deliveryDays,
+      };
+    }
+    return {
+      ...base,
+      name: nextName('Remédio', currentMedicines.length),
+      dose: positiveNumber(form.dose),
+      intervalHours: positiveNumber(form.intervalHours),
+      treatmentDays: positiveNumber(form.treatmentDays),
+      deliveryDays: result.deliveryDays,
+      reservePercent: positiveNumber(form.reservePercent),
+      weekly,
+      packageBLabel: result.packageBLabel,
+      packageB: result.packageB,
+    };
+  };
 
   const addMedicine = () => {
     setCurrentMedicines((items) => [...items, buildMedicine()]);
@@ -211,42 +262,67 @@ function App() {
 
         <section className="panel">
           <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
-            <button className={!isMl ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
+            <button className={!isMl && !isInsulin ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
               <Pill size={18} /> Comprimidos
             </button>
             <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
               <Droplets size={18} /> Líquidos / mL
             </button>
+            <button className={isInsulin ? 'active' : ''} onClick={() => setValue('mode')('insulina')}>
+              <Syringe size={18} /> Insulina
+            </button>
           </div>
 
           <div className="grid">
-            <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-            <Field 
-              label="Intervalo entre doses" 
-              value={form.intervalHours} 
-              onChange={setValue('intervalHours')} 
-              suffix="horas" 
-              help={
-                <span className="helpInline">
-                  <span>Ex.: de 8 em 8 horas = 8</span>
-                  <label className="inlineCheckbox">
-                    <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                    <strong>Semanal</strong>
-                  </label>
-                </span>
-              }
-              disabled={form.weekly === '1'} 
-            />
-            <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-            <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
-            <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
-
-            {isMl ? (
-              <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+            {isInsulin ? (
+              <>
+                <div className="field">
+                  <span>Apresentação</span>
+                  <div className="radio">
+                    <label><input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} /> Tubete</label>
+                    <label><input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} /> Frasco</label>
+                  </div>
+                </div>
+                <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" min="0" step="any" />
+                <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" min="0" step="any" />
+                <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" min="0" step="any" />
+                <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" min="0" step="any" />
+                <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" min="0" step="any" />
+                <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
+              </>
             ) : (
               <>
-                <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
-                <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+                <Field
+                  label="Intervalo entre doses"
+                  value={form.intervalHours}
+                  onChange={setValue('intervalHours')}
+                  suffix="horas"
+                  help={
+                    <span className="helpInline">
+                      <span>Ex.: de 8 em 8 horas = 8</span>
+                      {!isMl && (
+                        <label className="inlineCheckbox">
+                          <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                          <strong>Semanal</strong>
+                        </label>
+                      )}
+                    </span>
+                  }
+                  disabled={form.weekly === '1'}
+                />
+                <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
+                <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
+                <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
+
+                {isMl ? (
+                  <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                ) : (
+                  <>
+                    <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
+                    <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                  </>
+                )}
               </>
             )}
           </div>
@@ -272,7 +348,11 @@ function App() {
 
         <section className="formula">
           <PackageCheck size={20} />
-          <p>Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.</p>
+          <p>
+            {form.mode === 'insulina'
+              ? 'Fórmula: insulina = (soma das doses UI) × dias de tratamento ÷ divisor da apresentação.'
+              : 'Fórmula: quantidade = dose × (24 ÷ intervalo em horas) × dias de entrega. Embalagens são sempre arredondadas para cima.'}
+          </p>
         </section>
 
         <p className="buildBadge">Versão: histórico local · v2</p>
