@@ -7,14 +7,21 @@ const STORAGE_KEY = 'remedcalc.receitas.v1';
 
 const initialForm = {
   mode: 'comprimidos',
-  dose: '1',
-  intervalHours: '8',
-  treatmentDays: '30',
-  deliveryDays: '30',
+  dose: '0',
+  intervalHours: '0',
+  treatmentDays: '0',
+  deliveryDays: '0',
   reservePercent: '0',
-  unitsPerBlister: '10',
-  blistersPerBox: '3',
-  mlPerBottle: '100',
+  unitsPerBlister: '0',
+  blistersPerBox: '0',
+  mlPerBottle: '0',
+  insulinMode: 'tubete',
+  insulinMorning: '0',
+  insulinAfternoon: '0',
+  insulinNight: '0',
+  insulinLunch: '0',
+  insulinDinner: '0',
+  insulinDays: '0',
   weekly: '0',
 };
 
