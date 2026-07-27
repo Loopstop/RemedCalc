@@ -70,6 +70,7 @@ function App() {
     }
   });
   const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+  const [view, setView] = useState('calculator');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
