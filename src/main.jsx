@@ -89,7 +89,13 @@ function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   }, [recipes]);
 
-  const setValue = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
+  const setValue = (key) => (value) => setForm((current) => {
+    const next = { ...current, [key]: value };
+    if (key === 'mode' && value === 'insulina') {
+      next.expiresAt = '';
+    }
+    return next;
+  });
 
   const weekly = form.weekly === '1';
 
@@ -288,119 +294,67 @@ function App() {
           </div>
 
           {view === 'calculator' && (
-            <div className="grid">
-              {isInsulin ? (
-                <>
-                  <div className="field">
-                    <span>Apresentação</span>
-                    <div className="radio">
-                      <label><input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} /> Tubete</label>
-                      <label><input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} /> Frasco</label>
+            <>
+              <div className="grid">
+                {isInsulin ? (
+                  <>
+                    <div className="field">
+                      <span>Apresentação</span>
+                      <div className="radio">
+                        <label><input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} /> Tubete</label>
+                        <label><input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} /> Frasco</label>
+                      </div>
                     </div>
-                  </div>
-                  <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" min="0" step="any" />
-                  <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" min="0" step="any" />
-                  <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" min="0" step="any" />
-                  <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" min="0" step="any" />
-                  <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" min="0" step="any" />
-                  <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
-                </>
-              ) : (
-                <>
-                  <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-                  <Field
-                    label="Intervalo entre doses"
-                    value={form.intervalHours}
-                    onChange={setValue('intervalHours')}
-                    suffix="horas"
-                    help={
-                      <span className="helpInline">
-                        <span>Ex.: de 8 em 8 horas = 8</span>
-                        {!isMl && (
-                          <label className="inlineCheckbox">
-                            <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                            <strong>Semanal</strong>
-                          </label>
-                        )}
-                      </span>
-                    }
-                    disabled={form.weekly === '1'}
-                  />
-                  <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-                  <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
-                  {!isInsulin && <Field label="Validade da receita" value={form.expiresAt} onChange={setValue('expiresAt')} suffix="" help="Data em que esta receita vence. Use para controle de dispensação." />}
-
-                  {isMl ? (
-                    <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
-                  ) : (
-                    <>
-                      <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
-                      <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="grid">
-            {isInsulin ? (
-              <>
-                <div className="field">
-                  <span>Apresentação</span>
-                  <div className="radio">
-                    <label><input type="radio" name="insulinMode" value="tubete" checked={form.insulinMode === 'tubete'} onChange={() => setValue('insulinMode')('tubete')} /> Tubete</label>
-                    <label><input type="radio" name="insulinMode" value="frasco" checked={form.insulinMode === 'frasco'} onChange={() => setValue('insulinMode')('frasco')} /> Frasco</label>
-                  </div>
-                </div>
-                <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" min="0" step="any" />
-                <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" min="0" step="any" />
-                <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" min="0" step="any" />
-                <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" min="0" step="any" />
-                <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" min="0" step="any" />
-                <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
-              </>
-            ) : (
-              <>
-                <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-                <Field
-                  label="Intervalo entre doses"
-                  value={form.intervalHours}
-                  onChange={setValue('intervalHours')}
-                  suffix="horas"
-                  help={
-                    <span className="helpInline">
-                      <span>Ex.: de 8 em 8 horas = 8</span>
-                      {!isMl && (
-                        <label className="inlineCheckbox">
-                          <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                          <strong>Semanal</strong>
-                        </label>
-                      )}
-                    </span>
-                  }
-                  disabled={form.weekly === '1'}
-                />
-                <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
-                <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
-                {!isInsulin && <Field label="Validade da receita" value={form.expiresAt} onChange={setValue('expiresAt')} suffix="" help="Data em que esta receita vence. Use para controle de dispensação." />}
-
-                {isMl ? (
-                  <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                    <Field label="Manhã" value={form.insulinMorning} onChange={setValue('insulinMorning')} suffix="UI" min="0" step="any" />
+                    <Field label="Almoço" value={form.insulinLunch} onChange={setValue('insulinLunch')} suffix="UI" min="0" step="any" />
+                    <Field label="Tarde" value={form.insulinAfternoon} onChange={setValue('insulinAfternoon')} suffix="UI" min="0" step="any" />
+                    <Field label="Jantar" value={form.insulinDinner} onChange={setValue('insulinDinner')} suffix="UI" min="0" step="any" />
+                    <Field label="Noite" value={form.insulinNight} onChange={setValue('insulinNight')} suffix="UI" min="0" step="any" />
+                    <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" />
+                  </>
                 ) : (
                   <>
-                    <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
-                    <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                    <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
+                    <Field
+                      label="Intervalo entre doses"
+                      value={form.intervalHours}
+                      onChange={setValue('intervalHours')}
+                      suffix="horas"
+                      help={
+                        <span className="helpInline">
+                          <span>Ex.: de 8 em 8 horas = 8</span>
+                          {!isMl && (
+                            <label className="inlineCheckbox">
+                              <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                              <strong>Semanal</strong>
+                            </label>
+                          )}
+                        </span>
+                      }
+                      disabled={form.weekly === '1'}
+                    />
+                    <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
+                    <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
+                    {!isInsulin && <Field label="Validade da receita" value={form.expiresAt} onChange={setValue('expiresAt')} suffix="" help="Data em que esta receita vence. Use para controle de dispensação." />}
+
+                    {isMl ? (
+                      <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
+                    ) : (
+                      <>
+                        <Field label="Comprimidos por cartela" value={form.unitsPerBlister} onChange={setValue('unitsPerBlister')} suffix="comp." />
+                        <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
-          </div>
+              </div>
 
-          <div className="actions">
-            <button className="secondaryAction" onClick={addMedicine}><Plus size={18} /> Adicionar medicamento</button>
-            <button className="primaryAction" onClick={startNewRecipe}><Save size={18} /> Nova receita</button>
-          </div>
+              <div className="actions">
+                <button className="secondaryAction" onClick={addMedicine}><Plus size={18} /> Adicionar medicamento</button>
+                <button className="primaryAction" onClick={startNewRecipe}><Save size={18} /> Nova receita</button>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="results" aria-live="polite">
@@ -444,17 +398,18 @@ function App() {
             <div className="recipeList">
               {recipes.map((recipe) => {
                 const today = new Date();
-                const expires = new Date(recipe.expiresAt || '');
+                const hasExpiration = !!recipe.expiresAt;
+                const expires = new Date(recipe.expiresAt || today);
                 const diffMs = expires - new Date(today.toISOString().slice(0, 10));
                 const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-                const status = isNaN(diffDays) || diffDays < 0 ? 'Vencida' : diffDays <= 7 ? 'Vence em breve' : 'Válida';
-                const statusColor = status === 'Vencida' ? '#b91c1c' : status === 'Vence em breve' ? '#b45309' : '#15803d';
+                const status = !hasExpiration ? 'Sem validade' : diffDays < 0 ? 'Vencida' : diffDays <= 7 ? 'Vence em breve' : 'Válida';
+                const statusColor = status === 'Vencida' ? '#b91c1c' : status === 'Vence em breve' ? '#b45309' : status === 'Sem validade' ? '#64748b' : '#15803d';
                 return (
                   <article key={recipe.id} className="medicineItem">
                     <h3>{recipe.name}</h3>
                     <p>Criada em: {recipe.createdAt}</p>
                     <p>Vencimento: {recipe.expiresAt ? new Date(recipe.expiresAt).toLocaleDateString('pt-BR') : 'Não informado'}</p>
-                    <p style={{ color: statusColor, fontWeight: 800 }}>{status}{diffDays >= 0 ? ` (${diffDays} dia(s))` : ''}</p>
+                    <p style={{ color: statusColor, fontWeight: 800 }}>{status}{hasExpiration && diffDays >= 0 ? ` (${diffDays} dia(s))` : ''}</p>
                     <small>{recipe.medicines.length} remédio(s)</small>
                   </article>
                 );
