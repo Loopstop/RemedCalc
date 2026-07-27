@@ -95,6 +95,10 @@ function App() {
         total: roundUp(totalDoseUnits),
         totalWithReserve: roundUp(totalWithReserve),
 <<<<<<< ours
+<<<<<<< ours
+=======
+        deliveredTotal,
+>>>>>>> theirs
 =======
         deliveredTotal,
 >>>>>>> theirs
@@ -119,6 +123,10 @@ function App() {
       total: roundUp(totalDoseUnits),
       totalWithReserve: roundUp(totalWithReserve),
 <<<<<<< ours
+<<<<<<< ours
+=======
+      deliveredTotal,
+>>>>>>> theirs
 =======
       deliveredTotal,
 >>>>>>> theirs
