@@ -215,15 +215,6 @@ function App() {
         </section>
 
         <section className="panel">
-          <div className="tabs" role="tablist" aria-label="Tipo de medicamento">
-            <button className={!isMl ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
-              <Pill size={18} /> Comprimidos
-            </button>
-            <button className={isMl ? 'active' : ''} onClick={() => setValue('mode')('ml')}>
-              <Droplets size={18} /> Líquidos / mL
-            </button>
-          </div>
-
           <div className="tabs" role="tablist" aria-label="Apresentação">
             <button className={!isMl && !isInsulin ? 'active' : ''} onClick={() => setValue('mode')('comprimidos')}>
               <Pill size={18} /> Comprimidos
