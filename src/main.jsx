@@ -15,13 +15,14 @@ const initialForm = {
   unitsPerBlister: '10',
   blistersPerBox: '3',
   mlPerBottle: '100',
+  weekly: '0',
 };
 
 const roundUp = (value) => Math.ceil((Number(value) || 0) * 1000) / 1000;
 const positiveNumber = (value) => Math.max(Number(value) || 0, 0);
 const nextName = (prefix, length) => `${prefix} ${length + 1}`;
 
-function Field({ label, value, onChange, min = '0', step = 'any', suffix, help }) {
+function Field({ label, value, onChange, min = '0', step = 'any', suffix, help, ...inputProps }) {
   return (
     <label className="field">
       <span>{label}</span>
@@ -32,6 +33,7 @@ function Field({ label, value, onChange, min = '0', step = 'any', suffix, help }
           step={step}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          {...inputProps}
         />
         {suffix && <strong>{suffix}</strong>}
       </div>
@@ -53,7 +55,8 @@ function ResultCard({ title, value, detail }) {
 function summarizeMedicine(medicine) {
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
-  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  const freq = medicine.weekly ? '1x/semana' : `de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
+  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} ${freq}`;
 }
 
 function App() {
@@ -74,6 +77,8 @@ function App() {
 
   const setValue = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
 
+  const weekly = form.weekly === '1';
+
   const result = useMemo(() => {
     const dose = positiveNumber(form.dose);
     const intervalHours = positiveNumber(form.intervalHours);
@@ -81,8 +86,8 @@ function App() {
     const requestedDays = positiveNumber(form.deliveryDays);
     const deliveryDays = Math.min(requestedDays || treatmentDays, treatmentDays || requestedDays);
     const reserveFactor = 1 + positiveNumber(form.reservePercent) / 100;
-    const dosesPerDay = intervalHours > 0 ? 24 / intervalHours : 0;
-    const totalDoseUnits = dose * dosesPerDay * deliveryDays;
+    const dosesPerDay = weekly ? 1 / 7 : (intervalHours > 0 ? 24 / intervalHours : 0);
+    const totalDoseUnits = weekly ? Math.ceil(deliveryDays / 7) * dose : dose * dosesPerDay * deliveryDays;
     const totalWithReserve = totalDoseUnits * reserveFactor;
 
     if (form.mode === 'ml') {
@@ -94,14 +99,7 @@ function App() {
         dosesPerDay,
         total: roundUp(totalDoseUnits),
         totalWithReserve: roundUp(totalWithReserve),
-<<<<<<< ours
-<<<<<<< ours
-=======
         deliveredTotal,
->>>>>>> theirs
-=======
-        deliveredTotal,
->>>>>>> theirs
         primaryLabel: 'mL a entregar',
         packageA: bottles,
         packageALabel: 'frasco(s)',
@@ -122,14 +120,7 @@ function App() {
       dosesPerDay,
       total: roundUp(totalDoseUnits),
       totalWithReserve: roundUp(totalWithReserve),
-<<<<<<< ours
-<<<<<<< ours
-=======
       deliveredTotal,
->>>>>>> theirs
-=======
-      deliveredTotal,
->>>>>>> theirs
       primaryLabel: 'comprimido(s) a entregar',
       packageA: blisters,
       packageALabel: 'cartela(s)',
@@ -153,6 +144,7 @@ function App() {
     treatmentDays: positiveNumber(form.treatmentDays),
     deliveryDays: result.deliveryDays,
     reservePercent: positiveNumber(form.reservePercent),
+    weekly,
     total: result.total,
     totalWithReserve: result.totalWithReserve,
     packageALabel: result.packageALabel,
@@ -228,7 +220,14 @@ function App() {
 
           <div className="grid">
             <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-            <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" />
+            <label className="field checkboxField">
+              <span>Tomar semanalmente</span>
+              <div className="checkWrap">
+                <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                <strong>Semanal</strong>
+              </div>
+            </label>
+            <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
             <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
             <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
@@ -250,7 +249,11 @@ function App() {
         </section>
 
         <section className="results" aria-live="polite">
-          <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+          {weekly ? (
+            <ResultCard title="Frequência" value="1x/semana" detail={`${form.dose} ${isMl ? 'mL' : 'comp.'} por semana · ${result.deliveryDays} dia(s)`} />
+          ) : (
+            <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+          )}
           <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
           <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
           {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
