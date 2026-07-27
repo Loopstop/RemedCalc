@@ -67,7 +67,8 @@ function summarizeMedicine(medicine) {
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
   const freq = medicine.weekly ? '1x/semana' : `de ${medicine.intervalHours} em ${medicine.intervalHours} horas`;
-  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} ${freq}`;
+  const stock = medicine.stockDurationDays ? ` · estoque: ${roundUp(medicine.stockDurationDays)} dia(s)` : '';
+  return `${type}: ${medicine.totalWithReserve} ${unit} por ${medicine.deliveryDays} dia(s), ${medicine.dose} ${medicine.mode === 'ml' ? 'mL' : 'comp.'} ${freq}${stock}`;
 }
 
 function App() {
@@ -138,6 +139,7 @@ function App() {
         packageALabel: 'frasco(s)',
         packageADetail: mlPerBottle ? `${mlPerBottle} mL por frasco` : 'Informe o volume do frasco',
         warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+        stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? deliveredTotal / totalWithReserve * deliveryDays : 0,
       };
     }
 
@@ -162,6 +164,7 @@ function App() {
       packageBLabel: 'caixa(s)',
       packageBDetail: unitsPerBox ? `${unitsPerBox} comprimidos por caixa` : 'Informe cartelas por caixa',
       warning: requestedDays > treatmentDays ? 'O período de entrega foi limitado à duração do tratamento.' : '',
+      stockDurationDays: deliveredTotal > 0 && dosesPerDay > 0 ? deliveredTotal / (dose * dosesPerDay) : 0,
     };
   }, [form]);
 
@@ -196,6 +199,7 @@ function App() {
       treatmentDays: positiveNumber(form.treatmentDays),
       deliveryDays: result.deliveryDays,
       weekly,
+      stockDurationDays: result.stockDurationDays,
       packageBLabel: result.packageBLabel,
       packageB: result.packageB,
     };
@@ -340,6 +344,7 @@ function App() {
                 <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
               )}
               <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail="Sem reserva técnica" />
+              <ResultCard title="Duração do estoque" value={`${roundUp(result.stockDurationDays)} dia(s)`} detail="Baseado na quantidade entregue" />
               <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
               {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
             </>
