@@ -54,9 +54,9 @@ button { cursor: pointer; }
 
 .formula { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 10px; color: #475569; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafafa; font-size: .88rem; }
 .formula p { margin: 0; }
-.checkboxField { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; }
-.checkWrap { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px; cursor: pointer; }
-.checkWrap input { width: auto; }
+.helpInline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inlineCheckbox { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 700; font-size: .78rem; color: #334155; }
+.inlineCheckbox input { width: auto; accent-color: #0f766e; }
 .buildBadge { margin: 6px 0 0; text-align: center; color: #64748b; font-size: .78rem; font-weight: 800; }
 .currentBox { margin-bottom: 10px; padding: 8px; border-radius: 12px; background: #f0fdfa; border: 1px solid #99f6e4; }
 .currentBox p { margin: 6px 0 0; line-height: 1.2; font-size: .82rem; }

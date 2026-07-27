@@ -220,14 +220,22 @@ function App() {
 
           <div className="grid">
             <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-            <label className="field checkboxField">
-              <span>Tomar semanalmente</span>
-              <div className="checkWrap">
-                <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                <strong>Semanal</strong>
-              </div>
-            </label>
-            <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
+            <Field 
+              label="Intervalo entre doses" 
+              value={form.intervalHours} 
+              onChange={setValue('intervalHours')} 
+              suffix="horas" 
+              help={
+                <span className="helpInline">
+                  <span>Ex.: de 8 em 8 horas = 8</span>
+                  <label className="inlineCheckbox">
+                    <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                    <strong>Semanal</strong>
+                  </label>
+                </span>
+              }
+              disabled={form.weekly === '1'} 
+            />
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
             <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
             <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
