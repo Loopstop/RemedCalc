@@ -63,7 +63,8 @@ function summarizeMedicine(medicine) {
   if (medicine.mode === 'insulina') {
     const total = medicine.deliveredTotal ?? medicine.totalWithReserve ?? medicine.total;
     const days = medicine.deliveryDays || medicine.treatmentDays || 0;
-    return `Insulina: ${total} UI por ${days} dia(s)`;
+    const baseText = medicine.packageADetail && medicine.packageADetail.includes('(uso real:') ? ` (uso real: ${medicine.packageADetail.split('(uso real: ')[1].replace(')', '')})` : '';
+    return `Insulina: ${total} UI por ${days} dia(s)${baseText}`;
   }
   const type = medicine.mode === 'ml' ? 'Líquido' : 'Comprimido';
   const unit = medicine.mode === 'ml' ? 'mL' : 'comprimido(s)';
@@ -101,7 +102,8 @@ function App() {
       const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
       const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
       const days = positiveNumber(form.insulinDays);
-      const deliveredTotal = totalUi > 0 && divisor > 0 ? (totalUi * days % divisor === 0 ? totalUi * days / divisor + 1 : Math.ceil(totalUi * days / divisor)) : 0;
+      const base = totalUi * days / divisor;
+      const deliveredTotal = totalUi > 0 && divisor > 0 ? (base % 1 === 0 ? base + 1 : Math.ceil(base)) : 0;
       return {
         deliveryDays: days,
         dosesPerDay: 0,
@@ -111,7 +113,7 @@ function App() {
         primaryLabel: form.insulinMode === 'tubete' ? 'Tubetes a entregar' : 'Frascos a entregar',
         packageA: deliveredTotal,
         packageALabel: form.insulinMode === 'tubete' ? 'tubete(s)' : 'frasco(s)',
-        packageADetail: divisor === 300 ? 'Dividido por 300 UI' : 'Dividido por 1000 UI',
+        packageADetail: divisor === 300 ? `Dividido por 300 UI (uso real: ${base})` : `Dividido por 1000 UI (uso real: ${base})`,
         warning: '',
       };
     }
@@ -340,14 +342,20 @@ function App() {
             <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={result.packageADetail} />
           ) : (
             <>
-              {weekly ? (
-                <ResultCard title="Frequência" value={`${result.weeklyDoses}x/${result.deliveryDays} dias`} detail={`${form.dose} ${isMl ? 'mL' : 'comp.'} por semana`} />
+              {isInsulin ? (
+                <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={result.packageADetail} />
               ) : (
-                <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+                <>
+                  {weekly ? (
+                    <ResultCard title="Frequência" value={`${result.weeklyDoses}x/${result.deliveryDays} dias`} detail={`${form.dose} ${isMl ? 'mL' : 'comp.'} por semana`} />
+                  ) : (
+                    <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+                  )}
+                  <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={isMl ? result.packageADetail : `${result.total} calculado`} />
+                  <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
+                  {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
+                </>
               )}
-              <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={isMl ? result.packageADetail : `${result.total} calculado`} />
-              <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
-              {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
             </>
           )}
         </section>
