@@ -101,7 +101,7 @@ function App() {
       const totalUi = positiveNumber(form.insulinMorning) + positiveNumber(form.insulinAfternoon) + positiveNumber(form.insulinNight) + positiveNumber(form.insulinLunch) + positiveNumber(form.insulinDinner);
       const divisor = form.insulinMode === 'tubete' ? 300 : 1000;
       const days = positiveNumber(form.insulinDays);
-      const deliveredTotal = totalUi > 0 && divisor > 0 ? Math.ceil(totalUi * days / divisor) : 0;
+      const deliveredTotal = totalUi > 0 && divisor > 0 ? (totalUi * days % divisor === 0 ? totalUi * days / divisor + 1 : Math.ceil(totalUi * days / divisor)) : 0;
       return {
         deliveryDays: days,
         dosesPerDay: 0,
