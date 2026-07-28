@@ -5,20 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Calculadora de dispensação</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>" />
-    <script>
-      (function() {
-        try {
-          const url = new URL(window.location.href);
-          const isPages = url.host === 'loopstop.github.io';
-          const isRoot = url.pathname === '/' || url.pathname === '/index.html';
-          if (isPages && isRoot) {
-            window.location.replace('/RemedCalc/');
-          }
-        } catch (e) {
-          // ignore
-        }
-      })();
-    </script>
+    <script type="module" src="/src/main.jsx"></script>
   </head>
   <body>
     <div id="root"></div>
