@@ -13,38 +13,93 @@ const { chromium } = require('playwright');
   await page.goto(base);
   await page.waitForTimeout(1000);
 
-  // Screenshot of insulin tab
+  const report = {};
+
+  // ==================== COMPRIMIDOS ====================
+  await page.screenshot({ path: `${outDir}/01-comprimidos.png`, fullPage: true });
+
+  const comprimidosFields = await page.evaluate(() => {
+    const fields = document.querySelectorAll('.panel .grid .field');
+    return Array.from(fields).map(f => f.textContent.trim().split('\n')[0]);
+  });
+
+  const comprimidosWeekly = await page.locator('.weeklyRow .field').count();
+
+  const comprimidosResults = await page.locator('.results').innerHTML();
+
+  report.comprimidos = {
+    hasDose: comprimidosFields.some(f => f.includes('Comprimidos por dose')),
+    hasInterval: comprimidosFields.some(f => f.includes('Intervalo entre doses')),
+    hasTreatment: comprimidosFields.some(f => f.includes('Duração do tratamento')),
+    hasDelivery: comprimidosFields.some(f => f.includes('Entregar para')),
+    hasReserve: comprimidosFields.some(f => f.includes('Reserva técnica')),
+    hasBlister: comprimidosFields.some(f => f.includes('Comprimidos por cartela')),
+    hasBox: comprimidosFields.some(f => f.includes('Cartelas por caixa')),
+    hasWeekly: comprimidosWeekly > 0,
+    hasFrequencyCard: comprimidosResults.includes('Frequência'),
+    hasPrimaryCard: comprimidosResults.includes('comprimido(s) a entregar'),
+  };
+
+  // ==================== LÍQUIDOS ====================
+  await page.click('button:has-text("Líquidos / mL")');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: `${outDir}/03-liquid.png`, fullPage: true });
+
+  const liquidFields = await page.evaluate(() => {
+    const fields = document.querySelectorAll('.panel .grid .field');
+    return Array.from(fields).map(f => f.textContent.trim().split('\n')[0]);
+  });
+
+  const liquidWeekly = await page.locator('.weeklyRow .field').count();
+
+  const liquidResults = await page.locator('.results').innerHTML();
+
+  report.liquid = {
+    hasDose: liquidFields.some(f => f.includes('Volume por dose')),
+    hasInterval: liquidFields.some(f => f.includes('Intervalo entre doses')),
+    hasTreatment: liquidFields.some(f => f.includes('Duração do tratamento')),
+    hasDelivery: liquidFields.some(f => f.includes('Entregar para')),
+    hasReserve: liquidFields.some(f => f.includes('Reserva técnica')),
+    hasBottle: liquidFields.some(f => f.includes('Volume por frasco')),
+    hasWeekly: liquidWeekly > 0,
+    hasFrequencyCard: liquidResults.includes('Frequência'),
+    hasPrimaryCard: liquidResults.includes('mL a entregar'),
+    hasReserveCard: liquidResults.includes('Sem reserva técnica'),
+  };
+
+  // ==================== INSULINAS ====================
   await page.click('button:has-text("Insulinas")');
   await page.waitForTimeout(1000);
   await page.screenshot({ path: `${outDir}/02-insulinas.png`, fullPage: true });
 
-  // Get HTML of insulin tab
   const insulinPanelHTML = await page.locator('.panel').innerHTML();
-  fs.writeFileSync(`${outDir}/02-insulinas-panel.html`, insulinHTML);
+  const insulinFields = await page.evaluate(() => {
+    const fields = document.querySelectorAll('.panel .grid .field');
+    return Array.from(fields).map(f => f.textContent.trim().split('\n')[0]);
+  });
 
-  // Check for visual issues
-  const issues = [];
+  const insulinResults = await page.locator('.results').innerHTML();
 
-  // Check insulin fields are visible
-  const insulinFields = ['Modo', 'Manhã', 'Tarde', 'Noite', 'Almoço', 'Jantar', 'Dias de tratamento'];
-  for (const field of insulinFields) {
-    const count = await page.locator(`text=${field}`).count();
-    if (count === 0) {
-      issues.push(`Missing insulin field: ${field}`);
-    }
-  }
+  report.insulin = {
+    hasMode: insulinFields.some(f => f.includes('Modo')),
+    hasMorning: insulinFields.some(f => f.includes('Manhã')),
+    hasAfternoon: insulinFields.some(f => f.includes('Tarde')),
+    hasNight: insulinFields.some(f => f.includes('Noite')),
+    hasLunch: insulinFields.some(f => f.includes('Almoço')),
+    hasDinner: insulinFields.some(f => f.includes('Jantar')),
+    hasDays: insulinFields.some(f => f.includes('Dias de tratamento')),
+    hasDose: insulinFields.some(f => f.includes('Comprimidos por dose')),
+    hasInterval: insulinFields.some(f => f.includes('Intervalo entre doses')),
+    hasTreatment: insulinFields.some(f => f.includes('Duração do tratamento')),
+    hasDelivery: insulinFields.some(f => f.includes('Entregar para')),
+    hasReserve: insulinFields.some(f => f.includes('Reserva técnica')),
+    hasWeekly: insulinFields.some(f => f.includes('Tomar semanalmente')),
+    hasPrimaryCard: insulinResults.includes('Tubetes a entregar') || insulinResults.includes('Frascos a entregar'),
+    hasModeSelect: insulinPanelHTML.includes('<select'),
+  };
 
-  // Check for non-insulin fields visible on insulin tab
-  const nonInsulinFields = ['Comprimidos por dose', 'Intervalo entre doses', 'Duração do tratamento', 'Entregar para', 'Reserva técnica', 'Comprimidos por cartela', 'Cartelas por caixa', 'Tomar semanalmente'];
-  for (const field of nonInsulinFields) {
-    const count = await page.locator(`text=${field}`).count();
-    if (count > 0) {
-      issues.push(`Non-insulin field visible on insulin tab: ${field}`);
-    }
-  }
-
-  // Check for overflow
-  const bodyOverflow = await page.evaluate(() => {
+  // ==================== OVERFLOW ====================
+  report.overflow = await page.evaluate(() => {
     const body = document.body;
     return {
       scrollWidth: body.scrollWidth,
@@ -52,17 +107,6 @@ const { chromium } = require('playwright');
       hasHorizontalScroll: body.scrollWidth > body.clientWidth
     };
   });
-
-  // Check results section
-  const resultsHTML = await page.locator('.results').innerHTML();
-  if (!resultsHTML.includes('Tubetes') && !resultsHTML.includes('Frascos')) {
-    issues.push('Results section missing insulin delivery info');
-  }
-
-  const report = {
-    issues,
-    bodyOverflow: bodyOverflow,
-  };
 
   fs.writeFileSync(`${outDir}/report.json`, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
