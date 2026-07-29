@@ -1,4 +1,4 @@
-name: Deploy RemedCalc to GitHub Pages
+name: Deploy calculadora to GitHub Pages
 
 on:
   push:

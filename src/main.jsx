@@ -7,14 +7,14 @@ const STORAGE_KEY = 'remedcalc.receitas.v1';
 
 const initialForm = {
   mode: 'comprimidos',
-  dose: '1',
-  intervalHours: '8',
-  treatmentDays: '30',
-  deliveryDays: '30',
+  dose: '0',
+  intervalHours: '0',
+  treatmentDays: '0',
+  deliveryDays: '0',
   reservePercent: '0',
-  unitsPerBlister: '10',
-  blistersPerBox: '3',
-  mlPerBottle: '100',
+  unitsPerBlister: '0',
+  blistersPerBox: '0',
+  mlPerBottle: '0',
   insulinMode: 'tubete',
   insulinMorning: '0',
   insulinAfternoon: '0',
@@ -130,7 +130,7 @@ function App() {
     const requestedDays = positiveNumber(form.deliveryDays);
     const deliveryDays = Math.min(requestedDays || treatmentDays, treatmentDays || requestedDays);
     const dosesPerDay = intervalHours > 0 ? 24 / intervalHours : 0;
-    const totalDoseUnits = weekly ? Math.ceil(deliveryDays / 3.5) * dose : dose * dosesPerDay * deliveryDays;
+    const totalDoseUnits = weekly ? (() => { const start = new Date(); const startDay = start.getDay(); let count = 0; for (let i = 0; i < deliveryDays; i++) { const d = new Date(start); d.setDate(start.getDate() + i); if (d.getDay() === startDay) count++; } return count * dose; })() : dose * dosesPerDay * deliveryDays;
     const totalWithReserve = totalDoseUnits;
 
     if (form.mode === 'ml') {
