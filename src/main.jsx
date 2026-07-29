@@ -298,14 +298,16 @@ function App() {
 
           <div className="grid">
             <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
-            <label className="field checkboxField">
-              <span>Tomar semanalmente</span>
-              <div className="checkWrap">
-                <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                <strong>Semanal</strong>
-              </div>
-            </label>
             <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
+            {!isInsulin && (
+              <label className="field checkboxField">
+                <span className="helpInline">Tomar semanalmente</span>
+                <div className="checkWrap">
+                  <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                  <strong>Semanal</strong>
+                </div>
+              </label>
+            )}
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
             <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
             <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
@@ -314,7 +316,15 @@ function App() {
               <Field label="Volume por frasco" value={form.mlPerBottle} onChange={setValue('mlPerBottle')} suffix="mL" />
             ) : isInsulin ? (
               <>
-                <Field label="Modo de insulina" value={form.insulinMode} onChange={setValue('insulinMode')} suffix={form.insulinMode === 'tubete' ? 'tubete' : 'frasco'} help="300 UI por tubete, 1000 UI por frasco" />
+                <label className="field checkboxField">
+                  <span>Modo</span>
+                  <div className="checkWrap">
+                    <select value={form.insulinMode} onChange={(e) => setValue('insulinMode')(e.target.value)}>
+                      <option value="tubete">Tubete (300 UI)</option>
+                      <option value="frasco">Frasco (1000 UI)</option>
+                    </select>
+                  </div>
+                </label>
                 <label className="field checkboxField">
                   <span>Manhã</span>
                   <div className="checkWrap">
@@ -333,6 +343,20 @@ function App() {
                   <span>Noite</span>
                   <div className="checkWrap">
                     <input type="number" value={form.insulinNight} onChange={setValue('insulinNight')} min="0" step="any" />
+                    <strong>UI</strong>
+                  </div>
+                </label>
+                <label className="field checkboxField">
+                  <span>Almoço</span>
+                  <div className="checkWrap">
+                    <input type="number" value={form.insulinLunch} onChange={setValue('insulinLunch')} min="0" step="any" />
+                    <strong>UI</strong>
+                  </div>
+                </label>
+                <label className="field checkboxField">
+                  <span>Jantar</span>
+                  <div className="checkWrap">
+                    <input type="number" value={form.insulinDinner} onChange={setValue('insulinDinner')} min="0" step="any" />
                     <strong>UI</strong>
                   </div>
                 </label>
