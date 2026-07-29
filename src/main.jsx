@@ -357,6 +357,7 @@ function App() {
                     <strong>UI</strong>
                   </div>
                 </label>
+                <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" help="Período padrão de 30 dias." />
               </>
             ) : (
               <>
@@ -374,11 +375,6 @@ function App() {
                   <strong>Semanal</strong>
                 </div>
               </label>
-            </div>
-          )}
-          {isInsulin && (
-            <div className="grid">
-              <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" help="Período padrão de 30 dias." />
             </div>
           )}
 
