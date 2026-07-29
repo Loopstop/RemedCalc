@@ -299,15 +299,6 @@ function App() {
           <div className="grid">
             <Field label={isMl ? 'Volume por dose' : 'Comprimidos por dose'} value={form.dose} onChange={setValue('dose')} suffix={isMl ? 'mL' : 'comp.'} />
             <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
-            {!isInsulin && (
-              <label className="field checkboxField">
-                <span className="helpInline">Tomar semanalmente</span>
-                <div className="checkWrap">
-                  <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
-                  <strong>Semanal</strong>
-                </div>
-              </label>
-            )}
             <Field label="Duração do tratamento" value={form.treatmentDays} onChange={setValue('treatmentDays')} suffix="dias" />
             <Field label="Entregar para" value={form.deliveryDays} onChange={setValue('deliveryDays')} suffix="dias" help="Igual ao tratamento por padrão. Altere se a entrega for parcial ou em período diferente." />
             <Field label="Reserva técnica" value={form.reservePercent} onChange={setValue('reservePercent')} suffix="%" help="Acréscimo de segurança contra perdas, avarias ou extravio. Ex.: 10% garante 10 unidades extras a cada 100 calculadas." />
@@ -367,10 +358,24 @@ function App() {
                 <Field label="Cartelas por caixa" value={form.blistersPerBox} onChange={setValue('blistersPerBox')} suffix="cart." />
               </>
             )}
-            {isInsulin && (
-              <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" help="Período padrão de 30 dias." />
-            )}
           </div>
+          {!isInsulin && (
+            <div className="weeklyRow">
+              <label className="field checkboxField">
+                <span>Tomar semanalmente</span>
+                <div className="checkWrap">
+                  <input type="checkbox" checked={form.weekly === '1'} onChange={(e) => setValue('weekly')(e.target.checked ? '1' : '0')} />
+                  <strong>Semanal</strong>
+                </div>
+              </label>
+              <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
+            </div>
+          )}
+          {isInsulin && (
+            <div className="grid">
+              <Field label="Dias de tratamento" value={form.insulinDays} onChange={setValue('insulinDays')} suffix="dias" help="Período padrão de 30 dias." />
+            </div>
+          )}
 
           <div className="actions">
             <button className="secondaryAction" onClick={addMedicine}><Plus size={18} /> Adicionar medicamento</button>
@@ -379,19 +384,20 @@ function App() {
         </section>
 
         <section className="results" aria-live="polite">
-          {weekly ? (
-            <ResultCard title="Frequência" value={`${form.dose} ${isMl ? 'mL' : 'comp.'}/semana`} detail={`${result.deliveryDays} dia(s)`} />
-          ) : (
-            <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
-          )}
-          {isInsulin ? (
-            <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={result.packageADetail} />
-          ) : (
+          {!isInsulin && (
             <>
+              {weekly ? (
+                <ResultCard title="Frequência" value={`${form.dose} ${isMl ? 'mL' : 'comp.'}/semana`} detail={`${result.deliveryDays} dia(s)`} />
+              ) : (
+                <ResultCard title="Frequência diária" value={`${roundUp(result.dosesPerDay)} dose(s)/dia`} detail={`Entrega calculada para ${result.deliveryDays} dia(s)`} />
+              )}
               <ResultCard title={result.primaryLabel} value={result.totalWithReserve} detail={positiveNumber(form.reservePercent) ? `${result.total} sem reserva` : 'Sem reserva técnica'} />
               <ResultCard title={result.packageALabel} value={result.packageA} detail={result.packageADetail} />
               {!isMl && <ResultCard title={result.packageBLabel} value={result.packageB} detail={result.packageBDetail} />}
             </>
+          )}
+          {isInsulin && (
+            <ResultCard title={result.primaryLabel} value={result.deliveredTotal} detail={result.packageADetail} />
           )}
         </section>
 
