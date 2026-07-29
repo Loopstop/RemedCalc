@@ -35,6 +35,7 @@ button { cursor: pointer; }
 .field.small { font-size: .78rem; }
 .checkWrap { display: inline-flex; align-items: center; gap: 6px; }
 .checkWrap input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0f766e; }
+.checkWrap select { padding: 7px 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: .85rem; border-radius: 10px; outline: 0; }
 .field small { min-height: 20px; color: #64748b; font-weight: 600; line-height: 1.2; }
 .inputWrap { display: flex; align-items: center; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px; overflow: hidden; }
 .inputWrap input { width: 100%; border: 0; outline: 0; padding: 7px 8px; background: transparent; color: #0f172a; font-size: .85rem; }
