@@ -31,6 +31,10 @@ button { cursor: pointer; }
 .tabs button.active { border-color: #0f766e; color: white; background: #0f766e; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .field { display: flex; flex-direction: column; gap: 3px; font-weight: 800; color: #334155; font-size: .82rem; }
+.field.checkboxField { flex-direction: row; align-items: center; justify-content: space-between; }
+.field.small { font-size: .78rem; }
+.checkWrap { display: inline-flex; align-items: center; gap: 6px; }
+.checkWrap input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0f766e; }
 .field small { min-height: 20px; color: #64748b; font-weight: 600; line-height: 1.2; }
 .inputWrap { display: flex; align-items: center; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px; overflow: hidden; }
 .inputWrap input { width: 100%; border: 0; outline: 0; padding: 7px 8px; background: transparent; color: #0f172a; font-size: .85rem; }
