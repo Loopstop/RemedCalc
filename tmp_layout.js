@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   const page = await context.newPage();
 
-  const base = 'http://10.0.0.1:5174/RemedCalc/';
+  const base = 'http://10.0.0.1:5175/RemedCalc/';
   const outDir = '/tmp/agent_30373022-fd05-4a6a-846a-b7cec62b7972/playwright';
   const fs = require('fs');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
