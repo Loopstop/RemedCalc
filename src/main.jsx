@@ -368,7 +368,6 @@ function App() {
                   <strong>Semanal</strong>
                 </div>
               </label>
-              <Field label="Intervalo entre doses" value={form.intervalHours} onChange={setValue('intervalHours')} suffix="horas" help="Ex.: de 8 em 8 horas = 8" disabled={form.weekly === '1'} />
             </div>
           )}
           {isInsulin && (
