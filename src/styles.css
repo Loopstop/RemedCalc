@@ -12,7 +12,7 @@ button { cursor: pointer; }
 
 .page { width: min(1480px, calc(100% - 28px)); margin: 0 auto; padding: 6px 0; }
 .appShell { display: grid; grid-template-columns: 220px minmax(0, 1fr) 260px; gap: 12px; align-items: start; }
-.centerColumn { min-width: 0; }
+.centerColumn { min-width: 0; overflow-x: clip; }
 .hero { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 8px; padding: 14px; border-radius: 20px; color: white; background: linear-gradient(135deg, #0f766e, #0b4f6c); box-shadow: 0 12px 36px rgba(11, 79, 108, .2); }
 .hero h1 { font-size: clamp(1.6rem, 3.5vw, 2.8rem); line-height: .95; margin: 4px 0 8px; }
 .hero p { max-width: 540px; margin: 0; color: #dff7f4; font-size: .95rem; }
@@ -29,8 +29,8 @@ button { cursor: pointer; }
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 999px; background: #f8fafc; color: #334155; font-weight: 800; cursor: pointer; font-size: .85rem; }
 .tabs button.active { border-color: #0f766e; color: white; background: #0f766e; }
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.weeklyRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.weeklyRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
 .field { display: flex; flex-direction: column; gap: 3px; font-weight: 800; color: #334155; font-size: .82rem; }
 .field.checkboxField { flex-direction: row; align-items: center; justify-content: space-between; }
 .field.small { font-size: .78rem; }
