@@ -11,42 +11,37 @@ const { chromium } = require('playwright');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   await page.goto(base);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 
-  // Screenshot comprimidos tab
-  await page.screenshot({ path: `${outDir}/01-comprimidos.png`, fullPage: true });
-
-  // Check comprimidos tab elements are visible
-  const comprimidosFields = await page.evaluate(() => {
-    const fields = document.querySelectorAll('.panel .grid .field');
-    return Array.from(fields).map(f => f.textContent.trim().split('\n')[0]);
-  });
-
-  // Switch to insulin tab
+  // Screenshot of insulin tab
   await page.click('button:has-text("Insulinas")');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
   await page.screenshot({ path: `${outDir}/02-insulinas.png`, fullPage: true });
 
-  // Check insulin tab elements are visible
-  const insulinFields = await page.evaluate(() => {
-    const fields = document.querySelectorAll('.panel .grid .field');
-    return Array.from(fields).map(f => f.textContent.trim().split('\n')[0]);
-  });
+  // Get HTML of insulin tab
+  const insulinPanelHTML = await page.locator('.panel').innerHTML();
+  fs.writeFileSync(`${outDir}/02-insulinas-panel.html`, insulinHTML);
 
-  // Check insulin-specific elements
-  const hasModeSelect = await page.locator('.panel select').count();
-  const hasMorningInput = await page.locator('.panel input[aria-label="Manhã"]').count();
-  const hasDiasTratamento = await page.locator('.panel').innerHTML();
-  const hasDiasTratamentoField = hasDiasTratamento.includes('Dias de tratamento');
+  // Check for visual issues
+  const issues = [];
 
-  // Check results section for insulin
-  const resultsHTML = await page.locator('.results').innerHTML();
-  const hasInsulinResult = resultsHTML.includes('Tubetes') || resultsHTML.includes('Frascos');
+  // Check insulin fields are visible
+  const insulinFields = ['Modo', 'Manhã', 'Tarde', 'Noite', 'Almoço', 'Jantar', 'Dias de tratamento'];
+  for (const field of insulinFields) {
+    const count = await page.locator(`text=${field}`).count();
+    if (count === 0) {
+      issues.push(`Missing insulin field: ${field}`);
+    }
+  }
 
-  // Check for non-insulin fields on insulin tab
-  const hasDoseField = hasDiasTratamento.includes('Comprimidos por dose');
-  const hasIntervalField = hasDiasTratamento.includes('Intervalo entre doses');
-  const hasWeeklyField = hasDiasTratamento.includes('Tomar semanalmente');
+  // Check for non-insulin fields visible on insulin tab
+  const nonInsulinFields = ['Comprimidos por dose', 'Intervalo entre doses', 'Duração do tratamento', 'Entregar para', 'Reserva técnica', 'Comprimidos por cartela', 'Cartelas por caixa', 'Tomar semanalmente'];
+  for (const field of nonInsulinFields) {
+    const count = await page.locator(`text=${field}`).count();
+    if (count > 0) {
+      issues.push(`Non-insulin field visible on insulin tab: ${field}`);
+    }
+  }
 
   // Check for overflow
   const bodyOverflow = await page.evaluate(() => {
@@ -58,30 +53,15 @@ const { chromium } = require('playwright');
     };
   });
 
-  // Check grid layout
-  const gridInfo = await page.evaluate(() => {
-    const grid = document.querySelector('.panel .grid');
-    if (!grid) return null;
-    const style = window.getComputedStyle(grid);
-    return {
-      display: style.display,
-      gridTemplateColumns: style.gridTemplateColumns,
-      gap: style.gap,
-      childCount: grid.children.length
-    };
-  });
+  // Check results section
+  const resultsHTML = await page.locator('.results').innerHTML();
+  if (!resultsHTML.includes('Tubetes') && !resultsHTML.includes('Frascos')) {
+    issues.push('Results section missing insulin delivery info');
+  }
 
   const report = {
-    comprimidosFields,
-    insulinFields,
-    hasModeSelect,
-    hasDiasTratamentoField,
-    hasInsulinResult,
-    hasDoseField,
-    hasIntervalField,
-    hasWeeklyField,
-    bodyOverflow,
-    gridInfo
+    issues,
+    bodyOverflow: bodyOverflow,
   };
 
   fs.writeFileSync(`${outDir}/report.json`, JSON.stringify(report, null, 2));
